@@ -1,0 +1,25 @@
+/** For more help, browse the devicetree documentation at https://docs.zephyrproject.org/latest/build/dts/index.html
+ *  You can also visit the nRF DeviceTree extension documentation at
+ *  https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
+ */
+
+/ {
+    aliases {
+        temp0 = &mcp9808;
+    };
+};
+
+&i2c0 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+
+    mcp9808: jc42@18 {
+        /** Migration to Zephyr v4.0, which is used by NCS v3.2.4 migrates
+         *  MCP9808 driver to a generic JEDEC JC-42.4. Source found in
+         *  https://docs.zephyrproject.org/latest/build/dts/api/bindings/sensor/jedec%2Cjc-42.4-temp.html
+         */
+        compatible = "jedec,jc-42.4-temp";
+        reg = <0x18>;
+        status = "okay";
+    };
+};
