@@ -6,7 +6,34 @@
 / {
     aliases {
         temp0 = &mcp9808;
+        ext-btn = &ext_btn;
+        red-led = &red_led;
+        green-led = &green_led;
+        blue-led = &blue_led;
+
     };
+
+	buttons {
+		compatible = "gpio-keys";
+		ext_btn: ext_btn {
+			gpios = <&gpio1 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: red_led {
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		};
+		blue_led: blue_led {
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		};
+		green_led: green_led {
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &i2c0 {
