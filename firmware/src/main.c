@@ -6,10 +6,11 @@
 // Allows severity LOG_LEVEL_* and above
 LOG_MODULE_REGISTER(hydration_sensor, LOG_LEVEL_DBG);
 
-#define SLEEP_TIME_MS   1000
+#define SLEEP_TIME_MS   100
 
 // Sensors
-static const struct device *const temp_dev = DEVICE_DT_GET(DT_ALIAS(temp0));
+static const struct device *const temp_dev  = DEVICE_DT_GET(DT_ALIAS(temp0));
+static const struct device *const accel_dev = DEVICE_DT_GET(DT_ALIAS(accel0));
 
 // IO
 static const struct gpio_dt_spec btn = GPIO_DT_SPEC_GET(DT_ALIAS(ext_btn), gpios);
@@ -22,10 +23,16 @@ static const struct gpio_dt_spec leds[] = {
 int main(void)
 {
     struct sensor_value temp;
+    struct sensor_value accel[3];
 
     // Device Initialization
     if (!device_is_ready(temp_dev)) {
         printk("temp_dev not ready\n");
+        return 0;
+    }
+
+    if (!device_is_ready(accel_dev)) {
+        printk("accel_dev not ready\n");
         return 0;
     }
 
@@ -47,13 +54,27 @@ int main(void)
     while (1) {
         int pressed = gpio_pin_get_dt(&btn);
 
+        // Temperature Readings
         int err = sensor_sample_fetch(temp_dev) ?:
                 sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
         if (err) {
-            printk("Read Failed: %d\n", err);
+            LOG_DBG("Read Failed: %d\n", err);
         } else {
-            printk("Temperature: %.2f Cel\n", sensor_value_to_double(&temp));
+            LOG_DBG("Temperature: %.2f Cel\n", sensor_value_to_double(&temp));
+        }
+
+        // Accelerometer Readings
+        err = sensor_sample_fetch(accel_dev) ?:
+            sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, accel);
+
+        if (err) {
+            LOG_DBG("Accel read failed: %d\n", err);
+        } else {
+            LOG_DBG("Accel: %.2f %.2f %.2f m/s2\n",
+                sensor_value_to_double(&accel[0]),
+                sensor_value_to_double(&accel[1]),
+                sensor_value_to_double(&accel[2]));
         }
 
         if (pressed && !prev) {
