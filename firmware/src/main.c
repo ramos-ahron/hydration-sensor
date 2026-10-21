@@ -10,7 +10,6 @@ LOG_MODULE_REGISTER(hydration_sensor, LOG_LEVEL_DBG);
 
 // Sensors
 static const struct device *const temp_dev  = DEVICE_DT_GET(DT_ALIAS(temp0));
-static const struct device *const accel_dev = DEVICE_DT_GET(DT_ALIAS(accel0));
 
 // IO
 static const struct gpio_dt_spec btn = GPIO_DT_SPEC_GET(DT_ALIAS(ext_btn), gpios);
@@ -20,19 +19,24 @@ static const struct gpio_dt_spec leds[] = {
     GPIO_DT_SPEC_GET(DT_ALIAS(blue_led), gpios),
 };
 
+static const uint8_t colors[][3] = {
+    {0, 0, 0},
+    {1, 0, 0},
+    {0, 1, 0},
+    {1, 1, 0},
+    {0, 0, 1},
+    {1, 0, 1},
+    {0, 1, 1},
+    {1, 1, 1},
+};
+
 int main(void)
 {
     struct sensor_value temp;
-    struct sensor_value accel[3];
 
     // Device Initialization
     if (!device_is_ready(temp_dev)) {
         printk("temp_dev not ready\n");
-        return 0;
-    }
-
-    if (!device_is_ready(accel_dev)) {
-        printk("accel_dev not ready\n");
         return 0;
     }
 
@@ -48,7 +52,7 @@ int main(void)
         gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
     }
 
-    int current = 0;
+    int color = 0;
     int prev = 0;
 
     while (1) {
@@ -58,33 +62,13 @@ int main(void)
         int err = sensor_sample_fetch(temp_dev) ?:
                 sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
-        if (err) {
-            LOG_DBG("Read Failed: %d\n", err);
-        } else {
-            LOG_DBG("Temperature: %.2f Cel\n", sensor_value_to_double(&temp));
-        }
-
-        // Accelerometer Readings
-        err = sensor_sample_fetch(accel_dev) ?:
-            sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, accel);
-
-        if (err) {
-            LOG_DBG("Accel read failed: %d\n", err);
-        } else {
-            LOG_DBG("Accel: %.2f %.2f %.2f m/s2\n",
-                sensor_value_to_double(&accel[0]),
-                sensor_value_to_double(&accel[1]),
-                sensor_value_to_double(&accel[2]));
-        }
-
         if (pressed && !prev) {
-            current = (current + 1) % 3;
+            color = (color + 1) % ARRAY_SIZE(colors);
+            for (int i = 0; i < ARRAY_SIZE(leds); i++) {
+                gpio_pin_set_dt(&leds[i], colors[color][i]);
         }
+        LOG_INF("color %d: r=%d g=%d b=%d", color, colors[color][0], colors[color][1], colors[color][2]);}
         prev = pressed;
-
-        gpio_pin_set_dt(&leds[0], current == 0 && pressed);
-        gpio_pin_set_dt(&leds[1], current == 1 && pressed);
-        gpio_pin_set_dt(&leds[2], current == 2 && pressed);
 
         k_msleep(SLEEP_TIME_MS);
     }
