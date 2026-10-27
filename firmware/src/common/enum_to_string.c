@@ -2,6 +2,15 @@
 
 #ifdef CONFIG_FSM_ENUM_STRINGS
 
+const char *state_to_string(state_e value)
+{
+    switch (value) {
+    case STATE_INIT:
+        return "INIT";
+    }
+    return "";
+}
+
 const char *state_event_to_string(state_event_e value)
 {
     switch (value) {
