@@ -71,4 +71,27 @@ const char *state_event_to_string(state_event_e value)
     return "";
 }
 
+const char *led_color_to_string(led_color_e value)
+{
+    switch (value) {
+    case LED_OFF:
+        return "OFF";
+    case LED_RED:
+        return "RED";
+    case LED_GREEN:
+        return "GREEN";
+    case LED_YELLOW:
+        return "YELLOW";
+    case LED_BLUE:
+        return "BLUE";
+    case LED_MAGENTA:
+        return "MAGENTA";
+    case LED_CYAN:
+        return "CYAN";
+    case LED_WHITE:
+        return "WHITE";
+    }
+    return "";
+}
+
 #endif // CONFIG_FSM_ENUM_STRINGS
