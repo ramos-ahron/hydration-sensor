@@ -1,14 +1,17 @@
 #ifndef STATE_COMMON_H
 #define STATE_COMMON_H
 
-// Common definitions between states
-
-// Top level states
+/**
+ * @brief Defines the top-level states of the state machine.
+ */
 typedef enum {
     STATE_INIT,
     STATE_INIT_FAULT,
 } state_e;
 
+/**
+ * @brief Defines events that trigger state machine transitions.
+ */
 typedef enum {
     // Buttons
     STATE_EVENT_BUTTON_SHORT,
@@ -55,8 +58,10 @@ typedef enum {
 } state_event_e;
 
 /**
- * For events that automatically go from one state to another,
- * we set a timer for now.
+ * @brief Defines the temporary delay for stubbed state transitions.
+ *
+ * Used to simulate timed transitions until the actual state logic
+ * is implemented.
  */
 #define FSM_STUB_DWELL_MS 5000
 

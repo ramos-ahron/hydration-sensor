@@ -5,11 +5,26 @@
 #include <zephyr/kernel.h>
 
 /** 
- * Every event source puts state_event_e values here.
+ * @brief Every event source puts state_event_e values here.
  */
 extern struct k_msgq fsm_msgq;
 
+/**
+ * @brief Initializes the state machine
+ */
 void state_machine_init(void);
+
+/**
+ * @brief Processes an event and executes the corresponding state transition.
+ *
+ * Replaces short and long button events with their configured events
+ * when applicable. Otherwise, searches the transition table for a matching
+ * state and event, then enters the target state.
+ *
+ * @param event Event to process.
+ *
+ * @note Events with no matching transition are ignored.
+ */
 void state_machine_process_event(state_event_e event);
 
 /**
