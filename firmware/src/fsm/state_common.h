@@ -53,4 +53,10 @@ typedef enum {
     STATE_EVENT_NONE,
 } state_event_e;
 
+/**
+ * For events that automatically go from one state to another,
+ * we set a timer for now.
+ */
+#define FSM_STUB_DWELL_MS 5000
+
 #endif // STATE_COMMON_H
