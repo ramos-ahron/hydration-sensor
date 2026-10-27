@@ -1,0 +1,17 @@
+#include "fsm/state_init_fault.h"
+#include "ui/led.h"
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+
+void state_init_fault_run(state_e from)
+{
+    __ASSERT(
+        from == STATE_INIT,
+        "INIT_FAULT entered from %d",
+        from
+    );
+    ARG_UNUSED(from);
+
+    led_set(LED_RED);
+    // Let transition table handle transition.
+}
