@@ -15,6 +15,8 @@ const char *state_to_string(state_e value)
             return "SLEEP_PREP";
         case STATE_SLEEP:
             return "SLEEP";
+        case STATE_SHUTDOWN:
+            return "SHUTDOWN";
     }
     return "";
 }

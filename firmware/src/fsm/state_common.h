@@ -10,6 +10,7 @@ typedef enum {
     STATE_ACTIVE,
     STATE_SLEEP_PREP,
     STATE_SLEEP,
+    STATE_SHUTDOWN,
 } state_e;
 
 /**
