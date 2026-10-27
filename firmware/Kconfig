@@ -4,6 +4,25 @@ config FSM_ENUM_STRINGS
 	bool "Include enum-to-string helpers"
 	default y
 	help
-		Turns enum to strings
+	  Turns enum to strings
+
+choice FSM_MEASURE_MODE
+	prompt "Measurement mode"
+	default FSM_MEASURE_MODE_CONTINUOUS
+	help
+	  Measurement behaviour
+
+config FSM_MEASURE_MODE_MANUAL
+	bool "Manual"
+	help
+	  Short button press to trigger
+
+config FSM_MEASURE_MODE_TIMER
+	bool "Timer"
+
+config FSM_MEASURE_MODE_CONTINUOUS
+	bool "Continuous"
+
+endchoice
 
 source "Kconfig.zephyr"
