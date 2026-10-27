@@ -1,0 +1,3 @@
+mainmenu "Hydration Sensor"
+
+source "Kconfig.zephyr"
