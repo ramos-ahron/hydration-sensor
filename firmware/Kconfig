@@ -1,3 +1,9 @@
 mainmenu "Hydration Sensor"
 
+config FSM_ENUM_STRINGS
+	bool "Include enum-to-string helpers"
+	default y
+	help
+		Turns enum to strings
+
 source "Kconfig.zephyr"
