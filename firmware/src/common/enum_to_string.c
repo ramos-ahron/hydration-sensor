@@ -105,4 +105,19 @@ const char *led_color_to_string(led_color_e value)
     return "";
 }
 
+const char *ble_state_to_string(ble_state_e value)
+{
+    switch (value) {
+    case BLE_STATE_BLE_IDLE:
+        return "BLE_IDLE";
+    case BLE_STATE_PAIRING:
+        return "PAIRING";
+    case BLE_STATE_CONNECTED:
+        return "CONNECTED";
+    case BLE_STATE_DISCONNECTED:
+        return "DISCONNECTED";
+    }
+    return "";
+}
+
 #endif // CONFIG_FSM_ENUM_STRINGS
