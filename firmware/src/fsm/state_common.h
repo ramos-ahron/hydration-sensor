@@ -6,6 +6,7 @@
 // Top level states
 typedef enum {
     STATE_INIT,
+    STATE_INIT_FAULT,
 } state_e;
 
 typedef enum {

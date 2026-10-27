@@ -7,6 +7,8 @@ const char *state_to_string(state_e value)
     switch (value) {
     case STATE_INIT:
         return "INIT";
+    case STATE_INIT_FAULT:
+        return "INIT_FAULT";
     }
     return "";
 }
