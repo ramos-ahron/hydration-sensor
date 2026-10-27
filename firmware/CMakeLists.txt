@@ -12,8 +12,15 @@ project(
     LANGUAGES C
 )
 
+target_include_directories(
+    app
+    PRIVATE
+    src
+)
+
+file(GLOB_RECURSE app_sources CONFIGURE_DEPENDS src/*.c)
 target_sources(
     app
     PRIVATE
-    src/main.c
+    ${app_sources}
 )
