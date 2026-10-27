@@ -9,6 +9,8 @@ const char *state_to_string(state_e value)
             return "INIT";
         case STATE_INIT_FAULT:
             return "INIT_FAULT";
+        case STATE_ACTIVE:
+            return "ACTIVE";
     }
     return "";
 }

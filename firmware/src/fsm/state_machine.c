@@ -1,5 +1,6 @@
 #include "fsm/state_init.h"
 #include "fsm/state_common.h"
+#include "fsm/state_active.h"
 #include "fsm/state_machine.h"
 #include "fsm/state_init_fault.h"
 #include "common/enum_to_string.h"
@@ -27,6 +28,7 @@ struct state_transition {
 };
 
 static const struct state_transition state_transitions[] = {
+    { STATE_INIT, STATE_EVENT_INIT_OK, STATE_ACTIVE },
     { STATE_INIT, STATE_EVENT_INIT_FAIL, STATE_INIT_FAULT },
     { STATE_INIT, STATE_EVENT_WATCHDOG_RESET, STATE_INIT },
     { STATE_INIT_FAULT, STATE_EVENT_BUTTON_SHORT, STATE_INIT },
@@ -121,6 +123,10 @@ static void state_enter(state_e from, state_event_e event, state_e to)
         case STATE_INIT_FAULT:
             state_init_fault_run(from);
             break;
+
+        case STATE_ACTIVE:
+            state_active_run(from);
+            break;
     }
 }
 
@@ -141,6 +147,10 @@ void state_machine_process_event(state_event_e event)
     }
     if (event == STATE_EVENT_BUTTON_LONG && stub_long != STATE_EVENT_NONE) {
         post_stub_event(stub_long);
+        return;
+    }
+
+    if (state == STATE_ACTIVE && state_active_process_event(event)) {
         return;
     }
 
