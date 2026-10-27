@@ -2,6 +2,7 @@
 #define ENUM_TO_STRING_H
 
 #include "fsm/state_battery_monitor.h"
+#include "fsm/state_measurement.h"
 #include "fsm/state_ble.h"
 #include "fsm/state_common.h"
 #include "ui/led.h"
@@ -29,6 +30,7 @@ static inline const char *empty_func(unsigned int val)
 #define state_to_string(state) empty_func(state)
 #define state_event_to_string(event) empty_func(event)
 #define led_color_to_string(color) empty_func(color)
+#define measurement_state_to_string(state) empty_func(state)
 #define ble_state_to_string(state) empty_func(state);
 #define battery_state_to_string(state) empty_func(state)
 
@@ -37,6 +39,7 @@ static inline const char *empty_func(unsigned int val)
 const char *state_to_string(state_e state);
 const char *state_event_to_string(state_event_e event);
 const char *led_color_to_string(led_color_e color);
+const char *measurement_state_to_string(measurement_state_e state);
 const char *ble_state_to_string(ble_state_e state);
 const char *battery_state_to_string(battery_state_e state);
 

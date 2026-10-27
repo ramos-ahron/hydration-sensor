@@ -105,6 +105,29 @@ const char *led_color_to_string(led_color_e value)
     return "";
 }
 
+const char *measurement_state_to_string(measurement_state_e value)
+{
+    switch (value) {
+        case MEASUREMENT_STATE_M_IDLE:
+            return "M_IDLE";
+        case MEASUREMENT_STATE_MEASURING:
+            return "MEASURING";
+        case MEASUREMENT_STATE_PROCESSING:
+            return "PROCESSING";
+        case MEASUREMENT_STATE_SENSOR_ERROR:
+            return "SENSOR_ERROR";
+        case MEASUREMENT_STATE_RESULT_READY:
+            return "RESULT_READY";
+        case MEASUREMENT_STATE_TRANSMIT:
+            return "TRANSMIT";
+        case MEASUREMENT_STATE_STORE_LOCAL:
+            return "STORE_LOCAL";
+        case MEASUREMENT_STATE_STORAGE_ERROR:
+            return "STORAGE_ERROR";
+    }
+    return "";
+}
+
 const char *ble_state_to_string(ble_state_e value)
 {
     switch (value) {
