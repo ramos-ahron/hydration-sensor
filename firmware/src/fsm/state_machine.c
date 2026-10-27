@@ -66,30 +66,6 @@ static void stub_work_handler(struct k_work *work)
 }
 
 /**
- * @brief Configures the stub timer and button event mappings.
- *
- * Cancels any previously scheduled timer and waits for its handler to
- * finish before updating the configured events. Schedules a new timer
- * if @p timed_ev is not STATE_EVENT_NONE.
- *
- * @param timed_ev Event posted after FSM_STUB_DWELL_MS.
- * @param short_ev Event mapped to a short button press.
- * @param long_ev Event mapped to a long button press.
- */
-void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long_ev)
-{
-    static struct k_work_sync sync;
-
-    (void)k_work_cancel_delayable_sync(&stub_work, &sync);
-    stub_timed = timed_ev;
-    stub_short = short_ev;
-    stub_long = long_ev;
-    if (timed_ev != STATE_EVENT_NONE) {
-        (void)k_work_schedule(&stub_work, K_MSEC(FSM_STUB_DWELL_MS));
-    }
-}
-
-/**
  * @brief Cancels the stub timer and posts an event to the FSM queue.
  *
  * Clears all configured stub events before posting @p event to prevent
@@ -106,6 +82,19 @@ static void post_stub_event(state_event_e event)
     
     // To be handled in main
     (void)k_msgq_put(&fsm_msgq, &event, K_NO_WAIT);
+}
+
+void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long_ev)
+{
+    static struct k_work_sync sync;
+
+    (void)k_work_cancel_delayable_sync(&stub_work, &sync);
+    stub_timed = timed_ev;
+    stub_short = short_ev;
+    stub_long = long_ev;
+    if (timed_ev != STATE_EVENT_NONE) {
+        (void)k_work_schedule(&stub_work, K_MSEC(FSM_STUB_DWELL_MS));
+    }
 }
 
 // --------------------- STUBS -----------------------------------
