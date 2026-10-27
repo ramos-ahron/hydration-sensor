@@ -3,6 +3,7 @@
 #include "fsm/state_active.h"
 #include "fsm/state_machine.h"
 #include "fsm/state_init_fault.h"
+#include "fsm/state_sleep_prep.h"
 #include "common/enum_to_string.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -32,6 +33,7 @@ static const struct state_transition state_transitions[] = {
     { STATE_INIT, STATE_EVENT_INIT_FAIL, STATE_INIT_FAULT },
     { STATE_INIT, STATE_EVENT_WATCHDOG_RESET, STATE_INIT },
     { STATE_INIT_FAULT, STATE_EVENT_BUTTON_SHORT, STATE_INIT },
+    { STATE_ACTIVE, STATE_EVENT_SLEEP_GUARD, STATE_SLEEP_PREP },
 };
 
 static state_e state;
@@ -126,6 +128,10 @@ static void state_enter(state_e from, state_event_e event, state_e to)
 
         case STATE_ACTIVE:
             state_active_run(from);
+            break;
+
+        case STATE_SLEEP_PREP:
+            state_sleep_prep_run(from);
             break;
     }
 }

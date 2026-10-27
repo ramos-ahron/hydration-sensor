@@ -8,6 +8,7 @@ typedef enum {
     STATE_INIT,
     STATE_INIT_FAULT,
     STATE_ACTIVE,
+    STATE_SLEEP_PREP,
 } state_e;
 
 /**

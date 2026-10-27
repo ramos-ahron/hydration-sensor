@@ -11,6 +11,8 @@ const char *state_to_string(state_e value)
             return "INIT_FAULT";
         case STATE_ACTIVE:
             return "ACTIVE";
+        case STATE_SLEEP_PREP:
+            return "SLEEP_PREP";
     }
     return "";
 }
