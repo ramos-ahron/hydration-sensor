@@ -1,3 +1,4 @@
+#include "fsm/state_init.h"
 #include "fsm/state_common.h"
 #include "fsm/state_machine.h"
 #include "common/enum_to_string.h"
@@ -122,6 +123,7 @@ static void state_enter(state_e from, state_event_e event, state_e to)
 
     switch (to) {
         case STATE_INIT:
+            state_init_run(from);
             break;
     }
 }
@@ -131,6 +133,7 @@ void state_machine_init(void)
     k_work_init_delayable(&stub_work, stub_work_handler);
     state = STATE_INIT;
     LOG_INF("start -> %s", state_to_string(state));
+    state_init_run(STATE_INIT);
 }
 
 void state_machine_process_event(state_event_e event)
