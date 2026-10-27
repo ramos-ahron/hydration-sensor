@@ -3,6 +3,11 @@
 
 // Common definitions between states
 
+// Top level states
+typedef enum {
+    STATE_INIT,
+} state_e;
+
 typedef enum {
     // Buttons
     STATE_EVENT_BUTTON_SHORT,
