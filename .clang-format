@@ -9,3 +9,5 @@ SortIncludes: Never
 Cpp11BracedListStyle: false
 SpacesBeforeTrailingComments: 2
 IndentCaseLabels: true
+DeriveLineEnding: false
+UseCRLF: false
