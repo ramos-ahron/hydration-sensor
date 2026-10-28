@@ -1,0 +1,90 @@
+name: linter
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Match the Zephyr version you develop against.
+  ZEPHYR_VERSION: v4.2.0
+  BOARD: nrf52840dk/nrf52840
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build gperf ccache dfu-util device-tree-compiler cmake wget xz-utils
+          pip install west
+
+      - name: Cache west workspace
+        id: cache-ws
+        uses: actions/cache@v4
+        with:
+          path: |
+            ws/zephyr
+            ws/modules
+            ws/bootloader
+            ws/tools
+            ws/.west
+          key: west-${{ env.ZEPHYR_VERSION }}
+
+      - name: West init
+        if: steps.cache-ws.outputs.cache-hit != 'true'
+        run: |
+          west init -m https://github.com/zephyrproject-rtos/zephyr --mr "$ZEPHYR_VERSION" ws
+          cd ws
+          west update --narrow -o=--depth=1 -j4
+
+      - name: Install Zephyr Python requirements and SDK
+        working-directory: ws
+        run: |
+          west zephyr-export
+          pip install -r zephyr/scripts/requirements-base.txt
+          west sdk install --toolchains arm-zephyr-eabi
+
+      - name: Build
+        working-directory: ws
+        run: west build -p always -b "$BOARD" ../app/firmware -d ../build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: |
+            build/zephyr/zephyr.hex
+            build/zephyr/zephyr.elf
+          if-no-files-found: error
+
+  format:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run clang-format
+        run: |
+          sudo apt-get install -y clang-format
+          git ls-files '*.c' '*.cpp' '*.h' '*.hpp' | xargs -r clang-format -i
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: clang-format"
