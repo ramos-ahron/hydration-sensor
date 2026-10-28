@@ -11,3 +11,4 @@ SpacesBeforeTrailingComments: 2
 IndentCaseLabels: true
 DeriveLineEnding: false
 UseCRLF: false
+InsertNewlineAtEOF: true

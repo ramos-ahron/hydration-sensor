@@ -45,4 +45,4 @@ const char *battery_state_to_string(battery_state_e state);
 
 #endif
 
-#endif // ENUM_TO_STRING_H
+#endif  // ENUM_TO_STRING_H

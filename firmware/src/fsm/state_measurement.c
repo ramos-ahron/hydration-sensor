@@ -29,7 +29,8 @@ static const struct measurement_transition measurement_transitions[] = {
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_TO_STORE, MEASUREMENT_STATE_STORE_LOCAL },
     { MEASUREMENT_STATE_TRANSMIT, STATE_EVENT_RETRY, MEASUREMENT_STATE_TRANSMIT },
     { MEASUREMENT_STATE_TRANSMIT, STATE_EVENT_TRANSMIT_DONE, MEASUREMENT_STATE_STORE_LOCAL },
-    { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_CONTINUOUS, MEASUREMENT_STATE_MEASURING },
+    { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_CONTINUOUS,
+      MEASUREMENT_STATE_MEASURING },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_OTHER, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_WRITE_ERROR, MEASUREMENT_STATE_STORAGE_ERROR },
     { MEASUREMENT_STATE_STORAGE_ERROR, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_M_IDLE },
@@ -44,13 +45,12 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
 
     switch (to) {
         case MEASUREMENT_STATE_M_IDLE:
-            __ASSERT(from == MEASUREMENT_STATE_M_IDLE ||
-                    from == MEASUREMENT_STATE_SENSOR_ERROR ||
-                    from == MEASUREMENT_STATE_RESULT_READY ||
-                    from == MEASUREMENT_STATE_STORE_LOCAL ||
-                    from == MEASUREMENT_STATE_STORAGE_ERROR,
-                    "M_IDLE entered from %d", from);
-            
+            __ASSERT(from == MEASUREMENT_STATE_M_IDLE || from == MEASUREMENT_STATE_SENSOR_ERROR ||
+                         from == MEASUREMENT_STATE_RESULT_READY ||
+                         from == MEASUREMENT_STATE_STORE_LOCAL ||
+                         from == MEASUREMENT_STATE_STORAGE_ERROR,
+                     "M_IDLE entered from %d", from);
+
             // Change when we are able to get hydration status
             led_set(LED_OFF);
 
@@ -66,21 +66,19 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
             break;
 
         case MEASUREMENT_STATE_MEASURING:
-            __ASSERT(from == MEASUREMENT_STATE_M_IDLE ||
-                    from == MEASUREMENT_STATE_MEASURING ||
-                    from == MEASUREMENT_STATE_STORE_LOCAL,
-                    "MEASURING entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_M_IDLE || from == MEASUREMENT_STATE_MEASURING ||
+                         from == MEASUREMENT_STATE_STORE_LOCAL,
+                     "MEASURING entered from %d", from);
 
             led_set(LED_MAGENTA);
 
             fsm_stub(STATE_EVENT_ACQUIRED_SAMPLES, STATE_EVENT_ACQUIRED_SAMPLES,
-                    STATE_EVENT_SENSOR_FAULT);
+                     STATE_EVENT_SENSOR_FAULT);
 
             break;
 
         case MEASUREMENT_STATE_PROCESSING:
-            __ASSERT(from == MEASUREMENT_STATE_MEASURING,
-                    "PROCESSING entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_MEASURING, "PROCESSING entered from %d", from);
 
             led_set(LED_MAGENTA);
 
@@ -89,9 +87,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
             break;
 
         case MEASUREMENT_STATE_SENSOR_ERROR:
-            __ASSERT(from == MEASUREMENT_STATE_MEASURING ||
-                    from == MEASUREMENT_STATE_PROCESSING,
-                    "SENSOR_ERROR entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_MEASURING || from == MEASUREMENT_STATE_PROCESSING,
+                     "SENSOR_ERROR entered from %d", from);
 
             led_set(LED_RED);
 
@@ -101,8 +98,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
             break;
 
         case MEASUREMENT_STATE_RESULT_READY: {
-            __ASSERT(from == MEASUREMENT_STATE_PROCESSING,
-                    "RESULT_READY entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_PROCESSING, "RESULT_READY entered from %d", from);
 
             led_set(LED_GREEN);
 
@@ -116,22 +112,20 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
         }
 
         case MEASUREMENT_STATE_TRANSMIT:
-            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY ||
-                    from == MEASUREMENT_STATE_TRANSMIT,
-                    "TRANSMIT entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY || from == MEASUREMENT_STATE_TRANSMIT,
+                     "TRANSMIT entered from %d", from);
 
             fsm_stub(STATE_EVENT_TRANSMIT_DONE, STATE_EVENT_TRANSMIT_DONE, STATE_EVENT_NONE);
 
             break;
 
         case MEASUREMENT_STATE_STORE_LOCAL: {
-            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY ||
-                    from == MEASUREMENT_STATE_TRANSMIT,
-                    "STORE_LOCAL entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY || from == MEASUREMENT_STATE_TRANSMIT,
+                     "STORE_LOCAL entered from %d", from);
 
             const state_event_e next = IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)
-                                        ? STATE_EVENT_STORE_DONE_CONTINUOUS
-                                        : STATE_EVENT_STORE_DONE_OTHER;
+                                           ? STATE_EVENT_STORE_DONE_CONTINUOUS
+                                           : STATE_EVENT_STORE_DONE_OTHER;
 
             fsm_stub(next, next, STATE_EVENT_WRITE_ERROR);
 
@@ -139,8 +133,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
         }
 
         case MEASUREMENT_STATE_STORAGE_ERROR:
-            __ASSERT(from == MEASUREMENT_STATE_STORE_LOCAL,
-                    "STORAGE_ERROR entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_STORE_LOCAL, "STORAGE_ERROR entered from %d", from);
 
             led_set(LED_YELLOW);
 

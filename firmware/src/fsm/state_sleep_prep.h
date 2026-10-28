@@ -13,4 +13,4 @@
  */
 void state_sleep_prep_run(state_e from);
 
-#endif // STATE_SLEEP_PREP_H
+#endif  // STATE_SLEEP_PREP_H

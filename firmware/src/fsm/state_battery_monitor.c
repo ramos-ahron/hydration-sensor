@@ -15,8 +15,10 @@ struct battery_transition {
 static const struct battery_transition battery_transitions[] = {
     { BATTERY_STATE_BATTERY_OK, STATE_EVENT_BATTERY_BELOW, BATTERY_STATE_BATTERY_LOW },
     { BATTERY_STATE_BATTERY_LOW, STATE_EVENT_BATTERY_RECOVERED, BATTERY_STATE_BATTERY_OK },
-    { BATTERY_STATE_BATTERY_LOW, STATE_EVENT_BATTERY_BELOW_CRITICAL, BATTERY_STATE_BATTERY_CRITICAL },
-    { BATTERY_STATE_BATTERY_CRITICAL, STATE_EVENT_BATTERY_ABOVE_CRITICAL, BATTERY_STATE_BATTERY_LOW },
+    { BATTERY_STATE_BATTERY_LOW, STATE_EVENT_BATTERY_BELOW_CRITICAL,
+      BATTERY_STATE_BATTERY_CRITICAL },
+    { BATTERY_STATE_BATTERY_CRITICAL, STATE_EVENT_BATTERY_ABOVE_CRITICAL,
+      BATTERY_STATE_BATTERY_LOW },
 };
 
 static battery_state_e battery_state;
@@ -26,21 +28,18 @@ static void battery_enter(battery_state_e from, battery_state_e to)
     ARG_UNUSED(from);
 
     switch (to) {
-    case BATTERY_STATE_BATTERY_OK:
-        __ASSERT(from == BATTERY_STATE_BATTERY_OK ||
-                 from == BATTERY_STATE_BATTERY_LOW,
-                 "BATTERY_OK entered from %d", from);
-        break;
-    case BATTERY_STATE_BATTERY_LOW:
-        __ASSERT(from == BATTERY_STATE_BATTERY_LOW ||
-                 from == BATTERY_STATE_BATTERY_OK ||
-                 from == BATTERY_STATE_BATTERY_CRITICAL,
-                 "BATTERY_LOW entered from %d", from);
-        break;
-    case BATTERY_STATE_BATTERY_CRITICAL:
-        __ASSERT(from == BATTERY_STATE_BATTERY_LOW,
-                 "BATTERY_CRITICAL entered from %d", from);
-        break;
+        case BATTERY_STATE_BATTERY_OK:
+            __ASSERT(from == BATTERY_STATE_BATTERY_OK || from == BATTERY_STATE_BATTERY_LOW,
+                     "BATTERY_OK entered from %d", from);
+            break;
+        case BATTERY_STATE_BATTERY_LOW:
+            __ASSERT(from == BATTERY_STATE_BATTERY_LOW || from == BATTERY_STATE_BATTERY_OK ||
+                         from == BATTERY_STATE_BATTERY_CRITICAL,
+                     "BATTERY_LOW entered from %d", from);
+            break;
+        case BATTERY_STATE_BATTERY_CRITICAL:
+            __ASSERT(from == BATTERY_STATE_BATTERY_LOW, "BATTERY_CRITICAL entered from %d", from);
+            break;
     }
     battery_state = to;
 }

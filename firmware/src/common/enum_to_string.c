@@ -160,8 +160,8 @@ const char *battery_state_to_string(battery_state_e value)
             return "BATTERY_LOW";
         case BATTERY_STATE_BATTERY_CRITICAL:
             return "BATTERY_CRITICAL";
-        }
+    }
     return "";
 }
 
-#endif // CONFIG_FSM_ENUM_STRINGS
+#endif  // CONFIG_FSM_ENUM_STRINGS

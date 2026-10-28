@@ -52,4 +52,4 @@ bool state_ble_connected(void);
  */
 bool state_ble_pairing(void);
 
-#endif // STATE_BLE_H
+#endif  // STATE_BLE_H

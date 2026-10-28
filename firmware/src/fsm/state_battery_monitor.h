@@ -34,4 +34,4 @@ void state_battery_monitor_run(void);
  */
 bool state_battery_monitor_process_event(state_event_e event);
 
-#endif // STATE_BATTERY_MONITOR_H
+#endif  // STATE_BATTERY_MONITOR_H

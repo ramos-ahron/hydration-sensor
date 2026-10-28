@@ -31,23 +31,18 @@ static void ble_enter(ble_state_e from, ble_state_e to)
 
     switch (to) {
         case BLE_STATE_BLE_IDLE:
-            __ASSERT(from == BLE_STATE_BLE_IDLE ||
-                    from == BLE_STATE_PAIRING ||
-                    from == BLE_STATE_CONNECTED ||
-                    from == BLE_STATE_DISCONNECTED,
-                    "BLE_IDLE entered from %d", from);
+            __ASSERT(from == BLE_STATE_BLE_IDLE || from == BLE_STATE_PAIRING ||
+                         from == BLE_STATE_CONNECTED || from == BLE_STATE_DISCONNECTED,
+                     "BLE_IDLE entered from %d", from);
             break;
         case BLE_STATE_PAIRING:
-            __ASSERT(from == BLE_STATE_BLE_IDLE,
-                    "PAIRING entered from %d", from);
+            __ASSERT(from == BLE_STATE_BLE_IDLE, "PAIRING entered from %d", from);
             break;
         case BLE_STATE_CONNECTED:
-            __ASSERT(from == BLE_STATE_PAIRING,
-                    "CONNECTED entered from %d", from);
+            __ASSERT(from == BLE_STATE_PAIRING, "CONNECTED entered from %d", from);
             break;
         case BLE_STATE_DISCONNECTED:
-            __ASSERT(from == BLE_STATE_CONNECTED,
-                    "DISCONNECTED entered from %d", from);
+            __ASSERT(from == BLE_STATE_CONNECTED, "DISCONNECTED entered from %d", from);
             break;
     }
     ble_state = to;
@@ -70,7 +65,7 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
         return false;
     }
 
-    for (size_t i = 0; i < ARRAY_SIZE(ble_transitions); i ++) {
+    for (size_t i = 0; i < ARRAY_SIZE(ble_transitions); i++) {
         const struct ble_transition *t = &ble_transitions[i];
         if (t->from == ble_state && t->event == event) {
             if (t->to == t->from) {
@@ -80,7 +75,7 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
                     state_event_to_string(event));
             ble_enter(t->from, t->to);
             return true;
-        } 
+        }
     }
     return false;
 }

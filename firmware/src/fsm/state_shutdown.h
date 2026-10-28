@@ -12,4 +12,4 @@
  */
 void state_shutdown_run(state_e from);
 
-#endif // STATE_SHUTDOWN_H
+#endif  // STATE_SHUTDOWN_H

@@ -3,4 +3,4 @@
 
 // No API yet, as button.c just registers a callback
 
-#endif // BUTTON_H
+#endif  // BUTTON_H

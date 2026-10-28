@@ -10,7 +10,7 @@ void state_sleep_run(state_e from)
     ARG_UNUSED(from);
 
     led_set(LED_WHITE);
-    
+
     /**
      * short: goes back to init, handled by transition table
      * long: goes to shutdown, send battery critical

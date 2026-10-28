@@ -90,7 +90,7 @@ static void post_stub_event(state_event_e event)
 {
     // Clear timers and configurations
     fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-    
+
     // To be handled in main
     (void)k_msgq_put(&fsm_msgq, &event, K_NO_WAIT);
 }
@@ -117,10 +117,10 @@ static void state_enter(state_e from, state_event_e event, state_e to)
         return;
     }
 
-    LOG_INF("%s -> %s (%s)", state_to_string(from), state_to_string(to), 
+    LOG_INF("%s -> %s (%s)", state_to_string(from), state_to_string(to),
             state_event_to_string(event));
     state = to;
-    
+
     // Clear timers and configurations
     fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
 
@@ -175,7 +175,7 @@ void state_machine_process_event(state_event_e event)
         return;
     }
 
-    for (size_t i = 0; i < ARRAY_SIZE(state_transitions); i ++) {
+    for (size_t i = 0; i < ARRAY_SIZE(state_transitions); i++) {
         if (state == state_transitions[i].from && event == state_transitions[i].event) {
             state_enter(state_transitions[i].from, event, state_transitions[i].to);
             return;

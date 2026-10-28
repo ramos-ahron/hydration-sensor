@@ -7,7 +7,7 @@
 void state_init_run(state_e from)
 {
     __ASSERT(from == STATE_INIT || from == STATE_INIT_FAULT || from == STATE_SLEEP ||
-                from == STATE_SHUTDOWN,
+                 from == STATE_SHUTDOWN,
              "INIT entered from %d", from);
     ARG_UNUSED(from);
 

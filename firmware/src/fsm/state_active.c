@@ -39,11 +39,7 @@ bool state_active_process_event(state_event_e event)
 
 void state_active_run(state_e from)
 {
-    __ASSERT(
-        from == STATE_INIT,
-        "ACTIVE entered from %d",
-        from
-    );
+    __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
     ARG_UNUSED(from);
 
     // Initial substates: [*] --> BLE_IDLE, [*] --> BatteryInit, [*] --> M_IDLE

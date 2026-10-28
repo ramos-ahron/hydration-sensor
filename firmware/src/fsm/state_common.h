@@ -69,4 +69,4 @@ typedef enum {
  */
 #define FSM_STUB_DWELL_MS 5000
 
-#endif // STATE_COMMON_H
+#endif  // STATE_COMMON_H

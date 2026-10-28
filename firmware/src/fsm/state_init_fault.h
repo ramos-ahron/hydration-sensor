@@ -10,4 +10,4 @@
  */
 void state_init_fault_run(state_e from);
 
-#endif // STATE_INIT_FAULT_H
+#endif  // STATE_INIT_FAULT_H

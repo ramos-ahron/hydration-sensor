@@ -10,4 +10,4 @@
  */
 void state_init_run(state_e from);
 
-#endif // STATE_INIT_H
+#endif  // STATE_INIT_H

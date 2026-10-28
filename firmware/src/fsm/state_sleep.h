@@ -10,4 +10,4 @@
  */
 void state_sleep_run(state_e from);
 
-#endif // STATE_SLEEP_H
+#endif  // STATE_SLEEP_H

@@ -21,4 +21,4 @@ void state_active_run(state_e from);
  */
 bool state_active_process_event(state_event_e event);
 
-#endif // STATE_ACTIVE_H
+#endif  // STATE_ACTIVE_H

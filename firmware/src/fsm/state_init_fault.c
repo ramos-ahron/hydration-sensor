@@ -5,11 +5,7 @@
 
 void state_init_fault_run(state_e from)
 {
-    __ASSERT(
-        from == STATE_INIT,
-        "INIT_FAULT entered from %d",
-        from
-    );
+    __ASSERT(from == STATE_INIT, "INIT_FAULT entered from %d", from);
     ARG_UNUSED(from);
 
     led_set(LED_RED);

@@ -39,4 +39,4 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected);
  */
 bool state_measurement_busy(void);
 
-#endif // STATE_MEASUREMENT_H
+#endif  // STATE_MEASUREMENT_H
