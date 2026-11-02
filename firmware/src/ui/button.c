@@ -4,6 +4,16 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 
+/**
+ * @brief Input callback that turns button presses into FSM events.
+ *
+ * Ignores everything except key presses. INPUT_KEY_A posts STATE_EVENT_BUTTON_SHORT and
+ * INPUT_KEY_X posts STATE_EVENT_BUTTON_LONG to fsm_msgq without blocking; other key codes
+ * are ignored. The event is dropped if the queue is full.
+ *
+ * @param evt Input event from the input subsystem.
+ * @param user_data Unused.
+ */
 static void button_cb(struct input_event *evt, void *user_data)
 {
     ARG_UNUSED(user_data);

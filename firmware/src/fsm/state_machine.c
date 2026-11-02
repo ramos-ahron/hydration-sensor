@@ -110,6 +110,16 @@ void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long
 
 // --------------------- STUBS -----------------------------------
 
+/**
+ * @brief Performs a top-level state transition.
+ *
+ * Logs the transition, stores @p to as the current state and calls
+ * the run function of the new state with @p from.
+ *
+ * @param from State being left.
+ * @param event Event that caused the transition; only used for logging.
+ * @param to State being entered.
+ */
 static void state_enter(state_e from, state_event_e event, state_e to)
 {
     // No Logic Yet

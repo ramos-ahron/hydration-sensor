@@ -23,6 +23,15 @@ static const struct battery_transition battery_transitions[] = {
 
 static battery_state_e battery_state;
 
+/**
+ * @brief Enters a battery monitor state.
+ *
+ * Asserts that the transition is legal and stores @p to
+ * as the current battery state.
+ *
+ * @param from State being left; only used by the assertions.
+ * @param to State being entered.
+ */
 static void battery_enter(battery_state_e from, battery_state_e to)
 {
     ARG_UNUSED(from);

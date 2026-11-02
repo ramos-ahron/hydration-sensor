@@ -9,6 +9,14 @@ static const struct gpio_dt_spec leds[] = {
     GPIO_DT_SPEC_GET(DT_ALIAS(blue_led), gpios),
 };
 
+/**
+ * @brief Configures the red, green and blue LED GPIOs as outputs, initially off.
+ *
+ * Runs at APPLICATION init level through SYS_INIT().
+ *
+ * @return 0 on success, -ENODEV if an LED GPIO is not ready, or the error returned by
+ *         gpio_pin_configure_dt().
+ */
 static int led_init(void)
 {
     for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {

@@ -38,6 +38,23 @@ static const struct measurement_transition measurement_transitions[] = {
 
 static measurement_state_e measurement_state;
 
+/**
+ * @brief Enters a measurement substate.
+ *
+ * Stores @p to as the current state before anything else, asserts that the transition is
+ * legal, then sets the LED and gets ready for the new state:
+ * - M_IDLE: LED off
+ * - MEASURING, PROCESSING: LED magenta.
+ * - SENSOR_ERROR: LED red; the transition table handles the acknowledgement.
+ * - RESULT_READY: LED green; posts RESULT_TO_BLE if @p ble_connected, else RESULT_TO_STORE.
+ * - TRANSMIT: LED unchanged.
+ * - STORE_LOCAL: LED unchanged
+ * - STORAGE_ERROR: LED yellow
+ *
+ * @param from State being left
+ * @param to State being entered.
+ * @param ble_connected Whether BLE is connected
+ */
 static void measurement_enter(measurement_state_e from, measurement_state_e to, bool ble_connected)
 {
     ARG_UNUSED(from);
