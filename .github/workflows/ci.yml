@@ -44,6 +44,7 @@ jobs:
           path: |
             ncs
             ~/zephyr-sdk-*
+            ~/.cmake/packages
             ~/.cache/pip
           key: ncs-${{ env.NCS_VERSION }}-ubuntu24
 

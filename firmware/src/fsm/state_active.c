@@ -23,7 +23,7 @@ bool state_active_process_event(state_event_e event)
         return state_ble_process_event(event, state_measurement_busy());
     }
 
-    if (event == STATE_EVENT_SLEEP_GUARD && !state_measurement_idle()) {
+    if (event == STATE_EVENT_SLEEP_GUARD && (!state_measurement_idle() || state_ble_pairing())) {
         return true;
     }
 
