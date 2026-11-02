@@ -1,0 +1,89 @@
+#ifndef ENUM_TO_STRING_H
+#define ENUM_TO_STRING_H
+
+#include "fsm/state_battery_monitor.h"
+#include "fsm/state_measurement.h"
+#include "fsm/state_ble.h"
+#include "fsm/state_common.h"
+#include "ui/led.h"
+
+/**
+ * @brief Provides string representations of enums for logging.
+ *
+ * When CONFIG_FSM_ENUM_STRINGS is disabled, the conversion functions
+ * are replaced with inline stubs that return an empty string.
+ */
+#ifndef CONFIG_FSM_ENUM_STRINGS
+
+/**
+ * @brief Stub enum-to-string conversion.
+ *
+ * @param val Enum value to convert; unused.
+ * @return An empty string.
+ */
+static inline const char *empty_func(unsigned int val)
+{
+    (void)val;
+    return "";
+}
+
+#define state_to_string(state) empty_func(state)
+#define state_event_to_string(event) empty_func(event)
+#define led_color_to_string(color) empty_func(color)
+#define measurement_state_to_string(state) empty_func(state)
+#define ble_state_to_string(state) empty_func(state)
+#define battery_state_to_string(state) empty_func(state)
+
+#else
+
+/**
+ * @brief Converts a top-level state to its name for logging.
+ *
+ * @param state State to convert.
+ * @return Name of the state (e.g. "ACTIVE"), or an empty string for an unknown value.
+ */
+const char *state_to_string(state_e state);
+
+/**
+ * @brief Converts a state machine event to its name for logging.
+ *
+ * @param event Event to convert.
+ * @return Name of the event (e.g. "BUTTON_SHORT"), or an empty string for an unknown value.
+ */
+const char *state_event_to_string(state_event_e event);
+
+/**
+ * @brief Converts an LED color to its name for logging.
+ *
+ * @param color Color to convert.
+ * @return Name of the color (e.g. "MAGENTA"), or an empty string for an unknown value.
+ */
+const char *led_color_to_string(led_color_e color);
+
+/**
+ * @brief Converts a measurement substate to its name for logging.
+ *
+ * @param state Measurement state to convert.
+ * @return Name of the state (e.g. "M_IDLE"), or an empty string for an unknown value.
+ */
+const char *measurement_state_to_string(measurement_state_e state);
+
+/**
+ * @brief Converts a BLE substate to its name for logging.
+ *
+ * @param state BLE state to convert.
+ * @return Name of the state (e.g. "PAIRING"), or an empty string for an unknown value.
+ */
+const char *ble_state_to_string(ble_state_e state);
+
+/**
+ * @brief Converts a battery monitor substate to its name for logging.
+ *
+ * @param state Battery state to convert.
+ * @return Name of the state (e.g. "BATTERY_LOW"), or an empty string for an unknown value.
+ */
+const char *battery_state_to_string(battery_state_e state);
+
+#endif
+
+#endif  // ENUM_TO_STRING_H
