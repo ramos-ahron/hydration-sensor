@@ -1,0 +1,100 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NCS_VERSION: v3.2.4
+  BOARD: nrf52840dk/nrf52840
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: app
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ninja-build gperf ccache dfu-util device-tree-compiler cmake wget xz-utils
+          pip install west
+
+      - name: Cache NCS workspace and toolchain
+        id: cache-ncs
+        uses: actions/cache@v5
+        with:
+          path: |
+            ncs
+            ~/zephyr-sdk-*
+            ~/.cmake/packages
+            ~/.cache/pip
+          key: ncs-${{ env.NCS_VERSION }}-ubuntu24
+
+      - name: West init
+        if: steps.cache-ncs.outputs.cache-hit != 'true'
+        run: |
+          west init -m https://github.com/nrfconnect/sdk-nrf --mr "$NCS_VERSION" ncs
+          cd ncs
+          west update --narrow -o=--depth=1
+
+      - name: Install Python requirements
+        working-directory: ncs
+        run: |
+          west zephyr-export
+          pip install -r zephyr/scripts/requirements.txt
+          pip install -r nrf/scripts/requirements.txt
+          pip install -r bootloader/mcuboot/scripts/requirements.txt
+
+      - name: Install Zephyr SDK
+        if: steps.cache-ncs.outputs.cache-hit != 'true'
+        working-directory: ncs
+        run: west sdk install --toolchains arm-zephyr-eabi
+
+      - name: Build
+        working-directory: ncs
+        run: west build -p always -b "$BOARD" ../app/firmware -d ../build
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: firmware-${{ github.sha }}
+          path: |
+            build/merged.hex
+            build/**/zephyr/zephyr.hex
+            build/**/zephyr/zephyr.elf
+          if-no-files-found: error
+
+  format-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Require a .clang-format file
+        run: test -f .clang-format || { echo "::error::No .clang-format in repo root"; exit 1; }
+
+      - name: Install clang-format
+        run: pipx install clang-format==18.1.8
+
+      - name: Check formatting
+        run: |
+          git ls-files '*.c' '*.cpp' '*.h' '*.hpp' \
+            | xargs -r clang-format --dry-run --Werror --style=file --fallback-style=none
