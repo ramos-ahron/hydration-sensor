@@ -21,12 +21,12 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: app
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -39,7 +39,7 @@ jobs:
 
       - name: Cache NCS workspace and toolchain
         id: cache-ncs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ncs
@@ -72,7 +72,7 @@ jobs:
         working-directory: ncs
         run: west build -p always -b "$BOARD" ../app/firmware -d ../build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: firmware-${{ github.sha }}
           path: |
@@ -84,7 +84,7 @@ jobs:
   format-check:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
