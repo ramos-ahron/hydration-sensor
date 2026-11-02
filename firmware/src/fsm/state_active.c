@@ -1,3 +1,4 @@
+#include "fsm/state_machine.h"
 #include "fsm/state_active.h"
 #include "fsm/state_battery_monitor.h"
 #include "fsm/state_ble.h"
@@ -24,6 +25,9 @@ bool state_active_process_event(state_event_e event)
     }
 
     if (event == STATE_EVENT_SLEEP_GUARD && (!state_measurement_idle() || state_ble_pairing())) {
+        if (state_measurement_idle() && IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
+            fsm_stub(STATE_EVENT_SLEEP_GUARD, STATE_EVENT_NONE, STATE_EVENT_NONE);
+        }
         return true;
     }
 
