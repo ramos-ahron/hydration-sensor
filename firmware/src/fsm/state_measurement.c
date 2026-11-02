@@ -167,11 +167,20 @@ bool state_measurement_busy(void)
            measurement_state == MEASUREMENT_STATE_TRANSMIT;
 }
 
+bool state_measurement_idle(void)
+{
+    return measurement_state == MEASUREMENT_STATE_M_IDLE;
+}
+
 bool state_measurement_process_event(state_event_e event, bool ble_connected)
 {
     if (event == STATE_EVENT_BUTTON_SHORT && measurement_state == MEASUREMENT_STATE_M_IDLE &&
         !IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
         return false;
+    }
+
+    if (event == STATE_EVENT_RESULT_TO_BLE || event == STATE_EVENT_RESULT_TO_STORE) {
+        event = ble_connected ? STATE_EVENT_RESULT_TO_BLE : STATE_EVENT_RESULT_TO_STORE;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(measurement_transitions); i++) {

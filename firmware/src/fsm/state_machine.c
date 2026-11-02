@@ -24,6 +24,9 @@ LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
  */
 K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 8, 4);
 
+/** Delay before a stub event that hit a full queue is posted again. */
+#define STUB_QUEUE_RETRY_MS 50
+
 struct state_transition {
     state_e from;
     state_event_e event;
@@ -65,7 +68,8 @@ static state_event_e stub_long = STATE_EVENT_NONE;
  * @brief Handles expiration of the stub timer.
  *
  * Posts the configured timed event to the FSM message queue without
- * blocking. Does nothing if the queue is full.
+ * blocking. If the queue is full, logs a warning and tries again after
+ * STUB_QUEUE_RETRY_MS so the state machine cannot stall waiting for it.
  *
  * @param work Pointer to the work item; unused.
  */
@@ -73,26 +77,33 @@ static void stub_work_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
     state_event_e event = stub_timed;
-    (void)k_msgq_put(&fsm_msgq, &event, K_NO_WAIT);
+    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
+        LOG_WRN("FSM queue full, retrying %s", state_event_to_string(event));
+        (void)k_work_reschedule(&stub_work, K_MSEC(STUB_QUEUE_RETRY_MS));
+    }
 }
 
 /**
  * @brief Cancels the stub timer and posts an event to the FSM queue.
  *
- * Clears all configured stub events before posting @p event to prevent
+ * Clears all configured stub events after posting @p event to prevent
  * further stub events from being scheduled.
  *
  * @param event Event to post to the FSM message queue.
  *
- * @note The event is discarded if the queue is full.
+ * @note If the queue is full, the event is dropped and the stub configuration
+ *       stays armed, so the timed event or the next button press can retry.
  */
 static void post_stub_event(state_event_e event)
 {
+    // To be handled in main
+    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
+        LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
+        return;
+    }
+
     // Clear timers and configurations
     fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-
-    // To be handled in main
-    (void)k_msgq_put(&fsm_msgq, &event, K_NO_WAIT);
 }
 
 void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long_ev)

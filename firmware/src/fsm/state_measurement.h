@@ -39,4 +39,11 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected);
  */
 bool state_measurement_busy(void);
 
+/**
+ * @brief Checks whether the measurement state machine is in M_IDLE.
+ *
+ * @return true if the measurement state machine is idle; false otherwise.
+ */
+bool state_measurement_idle(void);
+
 #endif  // STATE_MEASUREMENT_H

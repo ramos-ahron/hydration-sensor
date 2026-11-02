@@ -23,16 +23,22 @@ bool state_active_process_event(state_event_e event)
         return state_ble_process_event(event, state_measurement_busy());
     }
 
+    if (event == STATE_EVENT_SLEEP_GUARD && !state_measurement_idle()) {
+        return true;
+    }
+
     /**
      * Every region sees the event. Order of priority:
      *  1. Measurement
      *  2. BLE
      *  3. Battery Monitor
      */
+    const bool ble_connected = state_ble_connected();
+    const bool measurement_busy = state_measurement_busy();
     bool consumed = false;
     // TODO: check if busy pairing in addition
-    consumed |= state_measurement_process_event(event, state_ble_connected());
-    consumed |= state_ble_process_event(event, state_measurement_busy());
+    consumed |= state_measurement_process_event(event, ble_connected);
+    consumed |= state_ble_process_event(event, measurement_busy);
     consumed |= state_battery_monitor_process_event(event);
     return consumed;
 }
