@@ -83,29 +83,6 @@ static void stub_work_handler(struct k_work *work)
     }
 }
 
-/**
- * @brief Cancels the stub timer and posts an event to the FSM queue.
- *
- * Clears all configured stub events after posting @p event to prevent
- * further stub events from being scheduled.
- *
- * @param event Event to post to the FSM message queue.
- *
- * @note If the queue is full, the event is dropped and the stub configuration
- *       stays armed, so the timed event or the next button press can retry.
- */
-static void post_stub_event(state_event_e event)
-{
-    // To be handled in main
-    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
-        LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
-        return;
-    }
-
-    // Clear timers and configurations
-    fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-}
-
 void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long_ev)
 {
     static struct k_work_sync sync;
@@ -182,14 +159,12 @@ void state_machine_init(void)
 
 void state_machine_process_event(state_event_e event)
 {
-    // Replace button event with the actual event and queue it again.
     if (event == STATE_EVENT_BUTTON_SHORT && stub_short != STATE_EVENT_NONE) {
-        post_stub_event(stub_short);
-        return;
-    }
-    if (event == STATE_EVENT_BUTTON_LONG && stub_long != STATE_EVENT_NONE) {
-        post_stub_event(stub_long);
-        return;
+        event = stub_short;
+        fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+    } else if (event == STATE_EVENT_BUTTON_LONG && stub_long != STATE_EVENT_NONE) {
+        event = stub_long;
+        fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
     }
 
     if (state == STATE_ACTIVE && state_active_process_event(event)) {
