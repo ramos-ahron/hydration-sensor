@@ -12,7 +12,10 @@ concurrency:
 
 env:
   NCS_VERSION: v3.2.4
-  BOARD: nrf21540dk/nrf52840
+  BOARD: nrf52840dk/nrf52840
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -21,6 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: app
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
@@ -83,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Require a .clang-format file
         run: |

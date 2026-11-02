@@ -31,7 +31,7 @@ static inline const char *empty_func(unsigned int val)
 #define state_event_to_string(event) empty_func(event)
 #define led_color_to_string(color) empty_func(color)
 #define measurement_state_to_string(state) empty_func(state)
-#define ble_state_to_string(state) empty_func(state);
+#define ble_state_to_string(state) empty_func(state)
 #define battery_state_to_string(state) empty_func(state)
 
 #else

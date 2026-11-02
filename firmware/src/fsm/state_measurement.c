@@ -160,9 +160,6 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected)
     for (size_t i = 0; i < ARRAY_SIZE(measurement_transitions); i++) {
         const struct measurement_transition *t = &measurement_transitions[i];
         if (t->from == measurement_state && t->event == event) {
-            if (t->to == t->from) {
-                return false;
-            }
             LOG_INF("%s -> %s (%s)", measurement_state_to_string(t->from),
                     measurement_state_to_string(t->to), state_event_to_string(event));
             measurement_enter(t->from, t->to, ble_connected);
