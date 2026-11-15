@@ -16,6 +16,8 @@
 
 	ext_buttons: ext_buttons {
 		compatible = "gpio-keys";
+		debounce-interval-ms = <50>;
+
 		ext_btn: ext_btn {
 			gpios = <&gpio1 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -28,7 +30,7 @@
 		input-codes = <INPUT_KEY_0>;
 		short-codes = <INPUT_KEY_A>;
 		long-codes = <INPUT_KEY_X>;
-		long-delay-ms = <1000>;
+		long-delay-ms = <2000>;
 	};
 
 	leds {
