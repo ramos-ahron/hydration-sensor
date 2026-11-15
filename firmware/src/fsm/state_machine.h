@@ -10,6 +10,12 @@
 extern struct k_msgq fsm_msgq;
 
 /**
+ * @brief Posts an event to the state machine without blocking.
+ *
+ * @param event Event to post. Dropped with a warning if the queue is full.
+ */
+
+/**
  * @brief Initializes the state machine
  */
 void state_machine_init(void);

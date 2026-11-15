@@ -20,9 +20,9 @@ LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
  * state_machine_process_event(), which looks up the transition and enters
  * the resulting state.
  *
- * @note The queue holds up to 8 events, each of type @c state_event_e.
+ * @note The queue holds up to 16 events, each of type @c state_event_e.
  */
-K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 8, 4);
+K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 16, 4);
 
 /** Delay before a stub event that hit a full queue is posted again. */
 #define STUB_QUEUE_RETRY_MS 50
@@ -47,6 +47,13 @@ static const struct state_transition state_transitions[] = {
 };
 
 static state_e state;
+
+void fsm_post(state_event_e event)
+{
+    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
+        LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
+    }
+}
 
 // --------------------- STUBS -----------------------------------
 
