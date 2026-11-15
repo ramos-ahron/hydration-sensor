@@ -48,12 +48,41 @@ static const struct state_transition state_transitions[] = {
 
 static state_e state;
 
+struct fsm_timer_slot {
+    struct k_work_delayable dwork;
+    state_event_e event;
+};
+
+static struct fsm_timer_slot timers[FSM_TIMER_COUNT];
+
 void fsm_post(state_event_e event)
 {
     if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
         LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
     }
 }
+
+static void timer_handler(struct k_work *work)
+{
+    // TODO: Restarting a timer as it expires can post the new event early. Cancel before restart.
+
+    /**
+     * Given a pointer to a member of the struct. It gives back the pointer to the struct.
+     */
+    const struct fsm_timer_slot *slot =
+        CONTAINER_OF(k_work_delayable_from_work(work), struct fsm_timer_slot, dwork);
+
+    // Post the event tied to the expired timer.
+    fsm_post(slot->event);
+}
+
+void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
+{
+    timers[timer].event = event;
+    (void)k_work_reschedule(&timers[timer].work, K_MSEC(ms));
+}
+
+void fsm_timer_stop(fsm_timer_e timer) { (void)k_work_cancel_delayable(&timers[timer].work); }
 
 // --------------------- STUBS -----------------------------------
 
@@ -126,6 +155,9 @@ static void state_enter(state_e from, state_event_e event, state_e to)
 
     // Clear timers and configurations
     fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+    for (int i = 0; i < FSM_TIMER_COUNT; i++) {
+        fsm_timer_stop(i);
+    }
 
     switch (to) {
         case STATE_INIT:
@@ -157,6 +189,9 @@ static void state_enter(state_e from, state_event_e event, state_e to)
 void state_machine_init(void)
 {
     k_work_init_delayable(&stub_work, stub_work_handler);
+    for (int i = 0; i < FSM_TIMER_COUNT; i++) {
+        k_work_init_delayable(&timers[i].work, timer_handler);
+    }
     state = STATE_INIT;
     LOG_INF("start -> %s", state_to_string(state));
     state_init_run(STATE_INIT);
