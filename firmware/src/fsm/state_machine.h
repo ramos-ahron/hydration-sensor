@@ -9,6 +9,14 @@
  */
 extern struct k_msgq fsm_msgq;
 
+typedef enum {
+    FSM_TIMER_INIT,
+    FSM_TIMER_SLEEP_GUARD,
+    FSM_TIMER_MEASURE,
+    FSM_TIMER_PAIRING,
+    FSM_TIMER_COUNT,
+} fsm_timer_e;
+
 /**
  * @brief Posts an event to the state machine without blocking.
  *
@@ -32,6 +40,16 @@ void state_machine_init(void);
  * @note Events with no matching transition are ignored.
  */
 void state_machine_process_event(state_event_e event);
+
+/**
+ * @brief Posts @p event after @p ms.
+ */
+void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms);
+
+/**
+ * @brief Cancels a timer.
+ */
+void fsm_timer_stop(fsm_timer_e timer);
 
 /**
  * @brief Configures the shared stub timer and button event mappings.
