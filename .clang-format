@@ -3,12 +3,26 @@ IndentWidth: 4
 UseTab: Never
 BreakBeforeBraces: Linux
 ColumnLimit: 100
-AllowShortFunctionsOnASingleLine: None
-AllowShortIfStatementsOnASingleLine: Never
-SortIncludes: Never
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortBlocksOnASingleLine: Always
+SortIncludes: CaseSensitive
 Cpp11BracedListStyle: false
 SpacesBeforeTrailingComments: 2
 IndentCaseLabels: true
-DeriveLineEnding: false
-UseCRLF: false
+LineEnding: LF
 InsertNewlineAtEOF: true
+InsertBraces: true
+AlignConsecutiveMacros: Consecutive
+KeepEmptyLinesAtTheStartOfBlocks: false
+ForEachMacros:
+  - SYS_SLIST_FOR_EACH_NODE
+  - SYS_SLIST_FOR_EACH_CONTAINER
+  - SYS_SLIST_FOR_EACH_NODE_SAFE
+  - SYS_SLIST_FOR_EACH_CONTAINER_SAFE
+  - SYS_DLIST_FOR_EACH_NODE
+  - SYS_DLIST_FOR_EACH_CONTAINER
+  - STRUCT_SECTION_FOREACH
+  - DT_FOREACH_CHILD
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+AttributeMacros: [__aligned, __packed, __unused, __maybe_unused]

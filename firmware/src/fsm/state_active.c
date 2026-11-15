@@ -1,7 +1,7 @@
-#include "fsm/state_machine.h"
 #include "fsm/state_active.h"
 #include "fsm/state_battery_monitor.h"
 #include "fsm/state_ble.h"
+#include "fsm/state_machine.h"
 #include "fsm/state_measurement.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>

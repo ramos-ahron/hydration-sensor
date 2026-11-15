@@ -57,29 +57,19 @@ static void ble_enter(ble_state_e from, ble_state_e to)
     ble_state = to;
 }
 
-bool state_ble_connected(void)
-{
-    return ble_state == BLE_STATE_CONNECTED;
-}
+bool state_ble_connected(void) { return ble_state == BLE_STATE_CONNECTED; }
 
-bool state_ble_pairing(void)
-{
-    return ble_state == BLE_STATE_PAIRING;
-}
+bool state_ble_pairing(void) { return ble_state == BLE_STATE_PAIRING; }
 
 bool state_ble_process_event(state_event_e event, bool measurement_busy)
 {
     // Ensure measurement is not busy before transitioning
-    if (event == STATE_EVENT_BUTTON_LONG && measurement_busy) {
-        return false;
-    }
+    if (event == STATE_EVENT_BUTTON_LONG && measurement_busy) { return false; }
 
     for (size_t i = 0; i < ARRAY_SIZE(ble_transitions); i++) {
         const struct ble_transition *t = &ble_transitions[i];
         if (t->from == ble_state && t->event == event) {
-            if (t->to == t->from) {
-                return false;
-            }
+            if (t->to == t->from) { return false; }
             LOG_INF("%s -> %s (%s)", ble_state_to_string(t->from), ble_state_to_string(t->to),
                     state_event_to_string(event));
             ble_enter(t->from, t->to);

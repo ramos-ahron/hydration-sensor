@@ -1,12 +1,12 @@
-#include "fsm/state_init.h"
-#include "fsm/state_common.h"
-#include "fsm/state_active.h"
 #include "fsm/state_machine.h"
-#include "fsm/state_init_fault.h"
-#include "fsm/state_sleep_prep.h"
-#include "fsm/state_sleep.h"
-#include "fsm/state_shutdown.h"
 #include "common/enum_to_string.h"
+#include "fsm/state_active.h"
+#include "fsm/state_common.h"
+#include "fsm/state_init.h"
+#include "fsm/state_init_fault.h"
+#include "fsm/state_shutdown.h"
+#include "fsm/state_sleep.h"
+#include "fsm/state_sleep_prep.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -111,9 +111,7 @@ void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long
 static void state_enter(state_e from, state_event_e event, state_e to)
 {
     // No Logic Yet
-    if (from == to) {
-        return;
-    }
+    if (from == to) { return; }
 
     LOG_INF("%s -> %s (%s)", state_to_string(from), state_to_string(to),
             state_event_to_string(event));
@@ -167,9 +165,7 @@ void state_machine_process_event(state_event_e event)
         fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
     }
 
-    if (state == STATE_ACTIVE && state_active_process_event(event)) {
-        return;
-    }
+    if (state == STATE_ACTIVE && state_active_process_event(event)) { return; }
 
     for (size_t i = 0; i < ARRAY_SIZE(state_transitions); i++) {
         if (state == state_transitions[i].from && event == state_transitions[i].event) {

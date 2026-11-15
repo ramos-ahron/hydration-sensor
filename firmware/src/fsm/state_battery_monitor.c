@@ -58,9 +58,7 @@ bool state_battery_monitor_process_event(state_event_e event)
     for (size_t i = 0; i < ARRAY_SIZE(battery_transitions); i++) {
         const struct battery_transition *t = &battery_transitions[i];
         if (t->from == battery_state && t->event == event) {
-            if (t->to == t->from) {
-                return false;
-            }
+            if (t->to == t->from) { return false; }
             LOG_INF("%s -> %s (%s)", battery_state_to_string(t->from),
                     battery_state_to_string(t->to), state_event_to_string(event));
             battery_enter(t->from, t->to);

@@ -167,10 +167,7 @@ bool state_measurement_busy(void)
            measurement_state == MEASUREMENT_STATE_TRANSMIT;
 }
 
-bool state_measurement_idle(void)
-{
-    return measurement_state == MEASUREMENT_STATE_M_IDLE;
-}
+bool state_measurement_idle(void) { return measurement_state == MEASUREMENT_STATE_M_IDLE; }
 
 bool state_measurement_process_event(state_event_e event, bool ble_connected)
 {
