@@ -87,10 +87,10 @@ static void timer_handler(struct k_work *work)
 void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
 {
     timers[timer].event = event;
-    (void)k_work_reschedule(&timers[timer].work, K_MSEC(ms));
+    (void)k_work_reschedule(&timers[timer].dwork, K_MSEC(ms));
 }
 
-void fsm_timer_stop(fsm_timer_e timer) { (void)k_work_cancel_delayable(&timers[timer].work); }
+void fsm_timer_stop(fsm_timer_e timer) { (void)k_work_cancel_delayable(&timers[timer].dwork); }
 
 // --------------------- STUBS -----------------------------------
 
@@ -199,7 +199,7 @@ void state_machine_init(void)
 {
     k_work_init_delayable(&stub_work, stub_work_handler);
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
-        k_work_init_delayable(&timers[i].work, timer_handler);
+        k_work_init_delayable(&timers[i].dwork, timer_handler);
     }
     state = STATE_INIT;
     LOG_INF("start -> %s", state_to_string(state));

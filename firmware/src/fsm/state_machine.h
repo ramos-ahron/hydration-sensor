@@ -23,6 +23,7 @@ typedef enum {
  * @param[in] event  Event to post. When the queue is full, the function drops the event and logs a
  *                   warning.
  */
+void fsm_post(state_event_e event);
 
 /**
  * @brief Initialize the state machine.
