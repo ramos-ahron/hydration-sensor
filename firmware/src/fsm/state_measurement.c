@@ -82,10 +82,12 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
                                 CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
             }
             if (!IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)) {
-                fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD,
-                                HS_SLEEP_GUARD_MS + (from == MEASUREMENT_STATE_STORE_LOCAL
-                                                         ? HS_RESULT_DISPLAY_MS
-                                                         : 0));
+                uint32_t guard_ms = SLEEP_GUARD_MS;
+
+                // Leave extra time to show the result LED after a measurement was stored
+                if (from == MEASUREMENT_STATE_STORE_LOCAL) { guard_ms += RESULT_DISPLAY_MS; }
+
+                fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD, guard_ms);
             }
 
             break;

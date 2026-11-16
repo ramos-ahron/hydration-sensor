@@ -27,7 +27,7 @@ bool state_active_process_event(state_event_e event)
 
     if (event == STATE_EVENT_SLEEP_GUARD && (!state_measurement_idle() || state_ble_pairing())) {
         if (state_measurement_idle()) {
-            fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD, HS_SLEEP_GUARD_MS);
+            fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD, SLEEP_GUARD_MS);
         }
         return true;
     }
