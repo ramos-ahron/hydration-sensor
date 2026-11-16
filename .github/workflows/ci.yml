@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install host dependencies
         run: |
@@ -71,6 +71,10 @@ jobs:
       - name: Build
         working-directory: ncs
         run: west build -p always -b "$BOARD" ../app/firmware -d ../build
+
+      - name: Unit Tests
+        working-directory: ncs
+        run: west twister -T ../app/firmware/tests -p native_sim/native/64 --inline-logs -O ../twister-out
 
       - uses: actions/upload-artifact@v6
         with:
