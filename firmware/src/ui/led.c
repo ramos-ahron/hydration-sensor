@@ -37,14 +37,17 @@ static void led_work_fn(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(led_work, led_work_fn);
 
 /**
- * @brief Phase of one slot at @p now: on/off and the absolute time of its next edge.
+ * @brief Find the phase of one slot at @p now and the time of its next edge.
  *
- * @param[in]  s     Slot to evaluate.
+ * The phase is on or off. The time of the next edge is an absolute uptime.
+ *
+ * @param[in]  s     Slot to examine.
  * @param[in]  now   Current uptime in ms.
- * @param[out] next  Uptime in ms of the next on/off edge. Not written when @p *done is set.
- * @param[out] done  Set to true when the pattern has finished and the slot can be dropped.
+ * @param[out] next  Uptime in ms of the next on/off edge. The function does not write this value
+ *                   when it sets @p done to true.
+ * @param[out] done  Set to true when the pattern is complete and the slot can be removed.
  *
- * @return true if the LED should be on at @p now, false if it should be off.
+ * @return true when the LED must be on at @p now, and false when it must be off.
  */
 static bool led_phase(const struct led_slot *s, int64_t now, int64_t *next, bool *done)
 {
@@ -165,12 +168,12 @@ static void led_update(void)
 }
 
 /**
- * @brief Work handler for @c led_work. Update the LED when the timer expires.
+ * @brief Update the LED when @c led_work expires.
  *
  * The system work queue thread runs this function when @c led_work expires. The function calls
  * led_update(), which sets the LED pins and schedules the next expiry.
  *
- * @param[in] work  Work item that expired. The function does not use this argument.
+ * @param[in] work  Work item that expired. The function does not use this value.
  */
 static void led_work_fn(struct k_work *work)
 {
@@ -206,6 +209,11 @@ void led_clear(led_prio_e prio)
     led_update();
 }
 
+/**
+ * @brief Remove the LED requests for all priorities.
+ *
+ * The function clears all slots and updates the LED. The LED turns off.
+ */
 void led_clear_all(void)
 {
     k_spinlock_key_t key = k_spin_lock(&lock);
@@ -220,12 +228,12 @@ led_color_e led_current(void) { return cur_color; }
 
 #if LED_HAVE_PINS
 /**
- * @brief Configures the red, green and blue LED GPIOs as outputs, initially off.
+ * @brief Configure the red, green and blue LED GPIOs as outputs that start in the off state.
  *
- * Runs at APPLICATION init level through SYS_INIT().
+ * SYS_INIT() runs this function at the APPLICATION init level.
  *
- * @return 0 on success, -ENODEV if an LED GPIO is not ready, or the error returned by
- *         gpio_pin_configure_dt().
+ * @return 0 on success, -ENODEV when an LED GPIO is not ready, or the error that
+ *         gpio_pin_configure_dt() returns.
  */
 static int led_init(void)
 {

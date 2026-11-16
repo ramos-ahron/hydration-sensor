@@ -16,21 +16,21 @@ typedef enum {
 } battery_state_e;
 
 /**
- * @brief Initializes the battery monitoring state machine.
+ * @brief Initialize the battery monitor state machine.
  *
- * Sets the initial battery monitoring state and performs any required
- * setup.
+ * The function sets the initial battery monitor state and does the necessary setup.
  */
 void state_battery_monitor_run(void);
 
 /**
- * @brief Processes an event in the battery monitoring state machine.
+ * @brief Process an event in the battery monitor state machine.
  *
- * Evaluates the event against the current battery state and performs
- * a state transition if a matching transition exists.
+ * The function compares the event and the current battery state with the transition table. If a
+ * transition matches, the function makes that transition.
  *
- * @param event Event to process.
- * @return true if the event was handled; false otherwise.
+ * @param[in] event  Event to process.
+ *
+ * @return true when the event caused a transition, and false when it did not.
  */
 bool state_battery_monitor_process_event(state_event_e event);
 

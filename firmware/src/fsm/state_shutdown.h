@@ -6,9 +6,9 @@
 // TODO: Add a shutdown prep?
 
 /**
- * @brief Executes the system shutdown state.
+ * @brief Run the system shutdown state.
  *
- * @param from Previous state.
+ * @param[in] from  Previous state.
  */
 void state_shutdown_run(state_e from);
 

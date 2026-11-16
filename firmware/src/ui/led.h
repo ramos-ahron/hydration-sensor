@@ -43,9 +43,9 @@ typedef enum {
 } led_prio_e;
 
 /**
- * @brief Sets the LED to the specified color.
+ * @brief Set the LED to a color.
  *
- * @param color Color to display.
+ * @param[in] color  Color to show.
  */
 void led_set(led_color_e color);
 

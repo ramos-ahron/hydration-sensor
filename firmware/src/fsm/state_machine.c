@@ -62,6 +62,14 @@ void fsm_post(state_event_e event)
     }
 }
 
+/**
+ * @brief Post the event of an FSM timer when the timer expires.
+ *
+ * The system work queue thread runs this function. The function finds the timer slot that holds
+ * @p work and posts the event of that slot.
+ *
+ * @param[in] work  Work item of the timer that expired.
+ */
 static void timer_handler(struct k_work *work)
 {
     // TODO: Restarting a timer as it expires can post the new event early. Cancel before restart.
@@ -101,13 +109,13 @@ static state_event_e stub_short = STATE_EVENT_NONE;
 static state_event_e stub_long = STATE_EVENT_NONE;
 
 /**
- * @brief Handles expiration of the stub timer.
+ * @brief Post the timed stub event when the stub timer expires.
  *
- * Posts the configured timed event to the FSM message queue without
- * blocking. If the queue is full, logs a warning and tries again after
- * STUB_QUEUE_RETRY_MS so the state machine cannot stall waiting for it.
+ * The function posts the timed event to the FSM message queue and does not block. If the queue is
+ * full, the function logs a warning and tries again after STUB_QUEUE_RETRY_MS. The retry prevents
+ * a stall of the state machine while it waits for the event.
  *
- * @param work Pointer to the work item; unused.
+ * @param[in] work  Work item. The function does not use this value.
  */
 static void stub_work_handler(struct k_work *work)
 {
@@ -135,14 +143,15 @@ void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long
 // --------------------- STUBS -----------------------------------
 
 /**
- * @brief Performs a top-level state transition.
+ * @brief Make a top-level state transition.
  *
- * Logs the transition, stores @p to as the current state and calls
- * the run function of the new state with @p from.
+ * When @p from and @p to are the same, the function does nothing. Otherwise, the function logs
+ * the transition and stores @p to as the current state. Then it calls the run function of the new
+ * state with @p from.
  *
- * @param from State being left.
- * @param event Event that caused the transition; only used for logging.
- * @param to State being entered.
+ * @param[in] from   State that the machine leaves.
+ * @param[in] event  Event that caused the transition. Only the log uses this value.
+ * @param[in] to     State that the machine enters.
  */
 static void state_enter(state_e from, state_event_e event, state_e to)
 {

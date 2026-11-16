@@ -16,9 +16,10 @@
 #ifndef CONFIG_FSM_ENUM_STRINGS
 
 /**
- * @brief Stub enum-to-string conversion.
+ * @brief Stub for the enum-to-string functions.
  *
- * @param val Enum value to convert; unused.
+ * @param[in] val  Enum value to convert. The function does not use this value.
+ *
  * @return An empty string.
  */
 static inline const char *empty_func(unsigned int val)
@@ -37,50 +38,62 @@ static inline const char *empty_func(unsigned int val)
 #else
 
 /**
- * @brief Converts a top-level state to its name for logging.
+ * @brief Convert a top-level state to its name for logging.
  *
- * @param state State to convert.
- * @return Name of the state (e.g. "ACTIVE"), or an empty string for an unknown value.
+ * @param[in] state  State to convert.
+ *
+ * @return The name of the state, for example "ACTIVE". The value is an empty string when
+ *         @p state is not known.
  */
 const char *state_to_string(state_e state);
 
 /**
- * @brief Converts a state machine event to its name for logging.
+ * @brief Convert a state machine event to its name for logging.
  *
- * @param event Event to convert.
- * @return Name of the event (e.g. "BUTTON_SHORT"), or an empty string for an unknown value.
+ * @param[in] event  Event to convert.
+ *
+ * @return The name of the event, for example "BUTTON_SHORT". The value is an empty string when
+ *         @p event is not known.
  */
 const char *state_event_to_string(state_event_e event);
 
 /**
- * @brief Converts an LED color to its name for logging.
+ * @brief Convert an LED color to its name for logging.
  *
- * @param color Color to convert.
- * @return Name of the color (e.g. "MAGENTA"), or an empty string for an unknown value.
+ * @param[in] color  Color to convert.
+ *
+ * @return The name of the color, for example "MAGENTA". The value is an empty string when
+ *         @p color is not known.
  */
 const char *led_color_to_string(led_color_e color);
 
 /**
- * @brief Converts a measurement substate to its name for logging.
+ * @brief Convert a measurement substate to its name for logging.
  *
- * @param state Measurement state to convert.
- * @return Name of the state (e.g. "M_IDLE"), or an empty string for an unknown value.
+ * @param[in] state  Measurement state to convert.
+ *
+ * @return The name of the state, for example "M_IDLE". The value is an empty string when
+ *         @p state is not known.
  */
 const char *measurement_state_to_string(measurement_state_e state);
 
 /**
- * @brief Converts a BLE substate to its name for logging.
+ * @brief Convert a BLE substate to its name for logging.
  *
- * @param state BLE state to convert.
- * @return Name of the state (e.g. "PAIRING"), or an empty string for an unknown value.
+ * @param[in] state  BLE state to convert.
+ *
+ * @return The name of the state, for example "PAIRING". The value is an empty string when
+ *         @p state is not known.
  */
 const char *ble_state_to_string(ble_state_e state);
 
 /**
- * @brief Converts a battery monitor substate to its name for logging.
+ * @brief Convert a battery monitor substate to its name for logging.
  *
- * @param state Battery state to convert.
- * @return Name of the state (e.g. "BATTERY_LOW"), or an empty string for an unknown value.
+ * @param[in] state  Battery state to convert.
+ *
+ * @return The name of the state, for example "BATTERY_LOW". The value is an empty string when
+ *         @p state is not known.
  */
 const char *battery_state_to_string(battery_state_e state);
 

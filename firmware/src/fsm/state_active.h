@@ -5,19 +5,25 @@
 #include <stdbool.h>
 
 /**
- * @brief Initializes all regions of the active state.
+ * @brief Initialize all regions of the active state.
  *
- * Enters the initial substate of each region.
+ * The function enters the initial substate of each region.
  *
- * @param from Previous top-level state.
+ * @param[in] from  Previous top-level state.
  */
 void state_active_run(state_e from);
 
 /**
- * @brief Dispatches an event to the active state's regions.
+ * @brief Send an event to the regions of the active state.
  *
- * @param event Event to process.
- * @return true if a nested state machine handled the event; false otherwise.
+ * When BLE is pairing, only the BLE region gets BUTTON_SHORT. The active state blocks SLEEP_GUARD
+ * when the measurement is not idle or when BLE is pairing. Every other event goes to the
+ * measurement, BLE and battery monitor regions, in that order.
+ *
+ * @param[in] event  Event to process.
+ *
+ * @return true when a region made a transition or the active state blocked the event, and false
+ *         when neither occurred.
  */
 bool state_active_process_event(state_event_e event);
 

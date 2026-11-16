@@ -19,30 +19,31 @@ typedef enum {
 } measurement_state_e;
 
 /**
- * @brief Initializes the measurement state machine.
+ * @brief Initialize the measurement state machine.
  */
 void state_measurement_run(void);
 
 /**
- * @brief Processes an event in the measurement state machine.
+ * @brief Process an event in the measurement state machine.
  *
- * @param event Event to process.
- * @param ble_connected Whether the BLE subsystem is connected.
- * @return true if the event was handled; false otherwise.
+ * @param[in] event          Event to process.
+ * @param[in] ble_connected  true when the BLE subsystem is connected.
+ *
+ * @return true when the event caused a transition, and false when it did not.
  */
 bool state_measurement_process_event(state_event_e event, bool ble_connected);
 
 /**
- * @brief Checks whether a measurement operation is in progress.
+ * @brief Check if a measurement operation is in progress.
  *
- * @return true if the measurement state machine is busy; false otherwise.
+ * @return true when the measurement state machine is busy, and false when it is not.
  */
 bool state_measurement_busy(void);
 
 /**
- * @brief Checks whether the measurement state machine is in M_IDLE.
+ * @brief Check if the measurement state machine is in M_IDLE.
  *
- * @return true if the measurement state machine is idle; false otherwise.
+ * @return true when the measurement state machine is idle, and false when it is not.
  */
 bool state_measurement_idle(void);
 

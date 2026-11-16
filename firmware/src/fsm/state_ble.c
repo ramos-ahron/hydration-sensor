@@ -26,13 +26,13 @@ static const struct ble_transition ble_transitions[] = {
 static ble_state_e ble_state;
 
 /**
- * @brief Enters a BLE substate.
+ * @brief Enter a BLE substate.
  *
- * Asserts that the transition is legal and stores @p to
- * as the current BLE state.
+ * The function asserts that the transition is legal. Then it stores @p to as the current BLE
+ * state.
  *
- * @param from State being left; only used by the assertions.
- * @param to State being entered.
+ * @param[in] from  State that the BLE region leaves. Only the assertions use this value.
+ * @param[in] to    State that the BLE region enters.
  */
 static void ble_enter(ble_state_e from, ble_state_e to)
 {
