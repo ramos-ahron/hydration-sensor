@@ -3,6 +3,7 @@
 #include "fsm/state_ble.h"
 #include "fsm/state_machine.h"
 #include "fsm/state_measurement.h"
+#include "hs/thresholds.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
@@ -25,8 +26,8 @@ bool state_active_process_event(state_event_e event)
     }
 
     if (event == STATE_EVENT_SLEEP_GUARD && (!state_measurement_idle() || state_ble_pairing())) {
-        if (state_measurement_idle() && IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
-            fsm_stub(STATE_EVENT_SLEEP_GUARD, STATE_EVENT_NONE, STATE_EVENT_NONE);
+        if (state_measurement_idle()) {
+            fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD, HS_SLEEP_GUARD_MS);
         }
         return true;
     }
