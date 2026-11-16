@@ -1,6 +1,7 @@
 #include "fsm/state_measurement.h"
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
+#include "hs/thresholds.h"
 #include "ui/led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -73,12 +74,18 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
             led_set(LED_OFF);
 
             // Transitions
-            if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
-                fsm_stub(STATE_EVENT_SLEEP_GUARD, STATE_EVENT_NONE, STATE_EVENT_NONE);
-            } else if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_TIMER)) {
-                fsm_stub(STATE_EVENT_TIMER_TRIGGER, STATE_EVENT_SLEEP_GUARD, STATE_EVENT_NONE);
-            } else {
-                fsm_stub(STATE_EVENT_AUTO_TRIGGER, STATE_EVENT_NONE, STATE_EVENT_NONE);
+            if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_TIMER)) {
+                fsm_timer_start(FSM_TIMER_MEASURE, STATE_EVENT_TIMER_TRIGGER,
+                                CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
+            } else if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)) {
+                fsm_timer_start(FSM_TIMER_MEASURE, STATE_EVENT_AUTO_TRIGGER,
+                                CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
+            }
+            if (!IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)) {
+                fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD,
+                                HS_SLEEP_GUARD_MS + (from == MEASUREMENT_STATE_STORE_LOCAL
+                                                         ? HS_RESULT_DISPLAY_MS
+                                                         : 0));
             }
 
             break;
