@@ -76,6 +76,13 @@ void led_request(led_prio_e prio, led_color_e color, led_pattern_e pattern, uint
 void led_clear(led_prio_e prio);
 
 /**
+ * @brief Remove all LED requests.
+ *
+ * The function clears the slot of every priority. The LED turns off.
+ */
+void led_clear_all(void);
+
+/**
  * @brief Get the color that the LED shows now.
  *
  * @return The color that the last update wrote to the LED pins.

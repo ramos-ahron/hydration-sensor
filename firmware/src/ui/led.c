@@ -91,7 +91,7 @@ static bool led_phase(const struct led_slot *s, int64_t now, int64_t *next, bool
             return true;
     }
     *next = s->start_ms + (t / half + 1) * half;
-    return ((t / half) & 1) == 0
+    return ((t / half) & 1) == 0;
 }
 
 /**
@@ -135,7 +135,7 @@ static led_color_e led_resolve(int64_t now_ms, int64_t *next_change_ms)
             *next_change_ms = MIN(next, s->end_ms);
         }
     }
-    return color
+    return color;
 }
 
 /**
@@ -202,7 +202,7 @@ void led_request(led_prio_e prio, led_color_e color, led_pattern_e pattern, uint
 
 void led_clear(led_prio_e prio)
 {
-    if ((unsined int)prio >= LED_PRIO_COUNT) { return; }
+    if ((unsigned int)prio >= LED_PRIO_COUNT) { return; }
     k_spinlock_key_t key = k_spin_lock(&lock);
     slots[prio].active = false;
     k_spin_unlock(&lock, key);
