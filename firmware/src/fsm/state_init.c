@@ -11,7 +11,7 @@ void state_init_run(state_e from)
              "INIT entered from %d", from);
     ARG_UNUSED(from);
 
-    led_set(LED_WHITE);
+    led_request(LED_PRIO_POWER, LED_WHITE, LED_PAT_STEADY, 0, 0);
     /**
      * On Timed / Short Events: Init OK
      * On Long Events: Init fault

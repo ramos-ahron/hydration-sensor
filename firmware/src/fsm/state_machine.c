@@ -7,6 +7,7 @@
 #include "fsm/state_shutdown.h"
 #include "fsm/state_sleep.h"
 #include "fsm/state_sleep_prep.h"
+#include "ui/led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -146,8 +147,8 @@ void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long
  * @brief Make a top-level state transition.
  *
  * When @p from and @p to are the same, the function does nothing. Otherwise, the function logs
- * the transition and stores @p to as the current state. Then it calls the run function of the new
- * state with @p from.
+ * the transition, stops every timer and clears ever LED request of the state being left,
+ * stores @p to as the current state. Then it calls the run function of the new state with @p from.
  *
  * @param[in] from   State that the machine leaves.
  * @param[in] event  Event that caused the transition. Only the log uses this value.
@@ -167,6 +168,7 @@ static void state_enter(state_e from, state_event_e event, state_e to)
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
         fsm_timer_stop(i);
     }
+    led_clear_all();
 
     switch (to) {
         case STATE_INIT:

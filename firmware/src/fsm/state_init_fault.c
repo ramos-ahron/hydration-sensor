@@ -8,6 +8,6 @@ void state_init_fault_run(state_e from)
     __ASSERT(from == STATE_INIT, "INIT_FAULT entered from %d", from);
     ARG_UNUSED(from);
 
-    led_set(LED_RED);
-    // Let transition table handle transition.
+    // A short press retries INIT through the transition table.
+    led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 0);
 }

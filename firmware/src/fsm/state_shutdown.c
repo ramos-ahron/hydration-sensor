@@ -1,6 +1,5 @@
 #include "fsm/state_shutdown.h"
 #include "fsm/state_machine.h"
-#include "ui/led.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
@@ -8,8 +7,6 @@ void state_shutdown_run(state_e from)
 {
     __ASSERT(from == STATE_ACTIVE || from == STATE_SLEEP, "SHUTDOWN entered from %d", from);
     ARG_UNUSED(from);
-
-    led_set(LED_OFF);
 
     fsm_stub(STATE_EVENT_BATTERY_MARGIN_OK, STATE_EVENT_BATTERY_MARGIN_OK, STATE_EVENT_NONE);
 }
