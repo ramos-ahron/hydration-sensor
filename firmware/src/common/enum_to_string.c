@@ -84,6 +84,8 @@ const char *state_event_to_string(state_event_e value)
             return "BATTERY_BELOW_CRITICAL";
         case STATE_EVENT_BATTERY_ABOVE_CRITICAL:
             return "BATTERY_ABOVE_CRITICAL";
+        case STATE_EVENT_BATTERY_CHANGED:
+            return "BATTERY_CHANGED";
         case STATE_EVENT_NONE:
             return "NONE";
     }
