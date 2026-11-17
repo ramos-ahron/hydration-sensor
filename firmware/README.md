@@ -16,3 +16,5 @@ The UART console has a shell. Every command starts with `hs`.
 | ------------------------ | ---------------------------------------------- |
 | `hs press <short\|long>` | Injects a button press.                        |
 | `hs led`                 | Prints the color the LED is driving right now. |
+| `hs batt [<mv>\|auto]`   | Shows the battery reading, or overrides it.    |
+| `hs vbus [0\|1\|auto]`   | Shows charger detection, or overrides it.      |

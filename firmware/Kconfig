@@ -32,4 +32,9 @@ config MEASURE_INTERVAL_S
 	help
 	  Seconds the device waits in the idle measurement state before it starts the next measurement.
 
+config BENCH_ALLOW_USB
+	bool "Allow measuring while connected"
+	help
+	  Lets a measurement start while charger power is present.
+
 source "Kconfig.zephyr"

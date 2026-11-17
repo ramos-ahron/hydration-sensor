@@ -35,7 +35,7 @@ bool safety_vbus_present(void);
  * A measurement is not safe while the device is charging.
  *
  * @retval 0       The measurement can start.
- * @retval -EPERM  The device is charging and CONFIG_HS_BENCH_ALLOW_USB is off.
+ * @retval -EPERM  The device is charging and CONFIG_BENCH_ALLOW_USB is off.
  */
 int safety_check(void);
 
@@ -47,7 +47,7 @@ void safety_drive_begin(void);
 /**
  * @brief Feed the drive watchdog.
  *
- * Call this at least every HS_DRIVE_WDT_MS.
+ * Call this at least every DRIVE_WDT_MS.
  */
 void safety_drive_feed(void);
 
