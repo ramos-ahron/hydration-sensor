@@ -32,8 +32,6 @@ const char *state_event_to_string(state_event_e value)
             return "INIT_OK";
         case STATE_EVENT_INIT_FAIL:
             return "INIT_FAIL";
-        case STATE_EVENT_WATCHDOG_RESET:
-            return "WATCHDOG_RESET";
         case STATE_EVENT_PREP_COMPLETE:
             return "PREP_COMPLETE";
         case STATE_EVENT_SLEEP_GUARD:

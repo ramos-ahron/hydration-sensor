@@ -38,7 +38,7 @@ struct state_transition {
 static const struct state_transition state_transitions[] = {
     { STATE_INIT, STATE_EVENT_INIT_OK, STATE_ACTIVE },
     { STATE_INIT, STATE_EVENT_INIT_FAIL, STATE_INIT_FAULT },
-    { STATE_INIT, STATE_EVENT_WATCHDOG_RESET, STATE_INIT },
+    { STATE_INIT, STATE_EVENT_BATTERY_CRITICAL, STATE_SHUTDOWN },
     { STATE_INIT_FAULT, STATE_EVENT_BUTTON_SHORT, STATE_INIT },
     { STATE_ACTIVE, STATE_EVENT_SLEEP_GUARD, STATE_SLEEP_PREP },
     { STATE_ACTIVE, STATE_EVENT_BATTERY_CRITICAL, STATE_SHUTDOWN },
@@ -157,9 +157,6 @@ void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long
  */
 static void state_enter(state_e from, state_event_e event, state_e to)
 {
-    // No Logic Yet
-    if (from == to) { return; }
-
     LOG_INF("%s -> %s (%s)", state_to_string(from), state_to_string(to),
             state_event_to_string(event));
     state = to;
