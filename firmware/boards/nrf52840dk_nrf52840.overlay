@@ -5,98 +5,100 @@
  */
 
 / {
-	aliases {
-		temp0 = &mcp9808;
-		accel0 = &adxl362;
-		ext-btn = &ext_btn;
-		red-led = &red_led;
-		green-led = &green_led;
-		blue-led = &blue_led;
-	};
+    aliases {
+        temp0 = &mcp9808;
+        accel0 = &adxl362;
+        ext-btn = &ext_btn;
+        red-led = &red_led;
+        green-led = &green_led;
+        blue-led = &blue_led;
+    };
 
-	ext_buttons: ext_buttons {
-		compatible = "gpio-keys";
-		debounce-interval-ms = <50>;
+    ext_buttons: ext_buttons {
+        compatible = "gpio-keys";
+        debounce-interval-ms = <50>;
 
-		ext_btn: ext_btn {
-			gpios = <&gpio1 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
-	};
+        ext_btn: ext_btn {
+            gpios = <&gpio1 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            zephyr,code = <INPUT_KEY_0>;
+        };
+    };
 
-	btn_press: press {
-		compatible = "zephyr,input-longpress";
-		input = <&ext_buttons>;
-		input-codes = <INPUT_KEY_0>;
-		short-codes = <INPUT_KEY_A>;
-		long-codes = <INPUT_KEY_X>;
-		long-delay-ms = <2000>;
-	};
+    btn_press: press {
+        compatible = "zephyr,input-longpress";
+        input = <&ext_buttons>;
+        input-codes = <INPUT_KEY_0>;
+        short-codes = <INPUT_KEY_A>;
+        long-codes = <INPUT_KEY_X>;
+        long-delay-ms = <2000>;
+    };
 
-	leds {
-		compatible = "gpio-leds";
+    leds {
+        compatible = "gpio-leds";
 
-		red_led: red_led {
-			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
-		};
-		blue_led: blue_led {
-			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
-		};
-		green_led: green_led {
-			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-		};
-	};
+        red_led: red_led {
+            gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+        };
+
+        blue_led: blue_led {
+            gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+        };
+
+        green_led: green_led {
+            gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+        };
+    };
 };
 
 &pinctrl {
-	// Reroute signal to GPIO pins
-	spi2_default: spi2_default {
-		group1 {
-			psels = <NRF_PSEL(SPIM_SCK,  1, 15)>,
-				<NRF_PSEL(SPIM_MISO, 1, 14)>,
-				<NRF_PSEL(SPIM_MOSI, 1, 13)>;
-		};
-	};
+    // Reroute signal to GPIO pins
+    spi2_default: spi2_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK,  1, 15)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 14)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 13)>;
+        };
+    };
 
-	spi2_sleep: spi2_sleep {
-		group1 {
-			psels = <NRF_PSEL(SPIM_SCK,  1, 15)>,
-				<NRF_PSEL(SPIM_MISO, 1, 14)>,
-				<NRF_PSEL(SPIM_MOSI, 1, 13)>;
-			low-power-enable;
-		};
-	};
+    spi2_sleep: spi2_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK,  1, 15)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 14)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 13)>;
+            low-power-enable;
+        };
+    };
 };
 
 &i2c0 {
-	status = "okay";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
 
-	mcp9808: jc42@18 {
-		/** Migration to Zephyr v4.0, which is used by NCS v3.2.4 migrates
-		*  MCP9808 driver to a generic JEDEC JC-42.4. Source found in
-		*  https://docs.zephyrproject.org/latest/build/dts/api/bindings/sensor/jedec%2Cjc-42.4-temp.html
-		*/
-		compatible = "jedec,jc-42.4-temp";
-		reg = <0x18>;
-		status = "okay";
-	};
+    mcp9808: jc42@18 {
+        /** Migration to Zephyr v4.0, which is used by NCS v3.2.4 migrates
+         *  MCP9808 driver to a generic JEDEC JC-42.4. Source found in
+         *  https://docs.zephyrproject.org/latest/build/dts/api/bindings/sensor/jedec%2Cjc-42.4-temp.html
+         */
+        compatible = "jedec,jc-42.4-temp";
+        reg = <0x18>;
+        status = "okay";
+    };
 };
 
 &spi1 {
-	status = "disabled";
+    status = "disabled";
 };
 
 &spi2 {
-	status = "okay";
-	pinctrl-0 = <&spi2_default>;
-	pinctrl-1 = <&spi2_sleep>;
-	pinctrl-names = "default", "sleep";
-	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+    status = "okay";
+    pinctrl-0 = <&spi2_default>;
+    pinctrl-1 = <&spi2_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 
-	adxl362: adxl362@0 {
-		compatible = "adi,adxl362";
-		reg = <0>;
-		spi-max-frequency = <125000>;
-	};
+    adxl362: adxl362@0 {
+        compatible = "adi,adxl362";
+        reg = <0>;
+        spi-max-frequency = <125000>;
+    };
 };
