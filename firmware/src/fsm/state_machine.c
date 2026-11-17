@@ -7,6 +7,7 @@
 #include "fsm/state_shutdown.h"
 #include "fsm/state_sleep.h"
 #include "fsm/state_sleep_prep.h"
+#include "safety/safety.h"
 #include "ui/led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -216,6 +217,16 @@ void state_machine_process_event(state_event_e event)
     } else if (event == STATE_EVENT_BUTTON_LONG && stub_long != STATE_EVENT_NONE) {
         event = stub_long;
         fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+    }
+
+    if (event == STATE_EVENT_BATTERY_CHANGED) {
+        if ((state == STATE_INIT || state == STATE_ACTIVE || state == STATE_SLEEP) &&
+            battery_level() == BATTERY_LEVEL_CRITICAL) {
+            event = STATE_EVENT_BATTERY_CRITICAL;
+        } else if (state == STATE_SHUTDOWN && event == STATE_EVENT_BUTTON_SHORT) {
+            led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 2000);
+            return;
+        }
     }
 
     if (state == STATE_ACTIVE && state_active_process_event(event)) { return; }

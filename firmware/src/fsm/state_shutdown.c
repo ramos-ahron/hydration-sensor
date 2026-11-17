@@ -7,6 +7,4 @@ void state_shutdown_run(state_e from)
 {
     __ASSERT(from == STATE_ACTIVE || from == STATE_SLEEP, "SHUTDOWN entered from %d", from);
     ARG_UNUSED(from);
-
-    fsm_stub(STATE_EVENT_BATTERY_MARGIN_OK, STATE_EVENT_BATTERY_MARGIN_OK, STATE_EVENT_NONE);
 }

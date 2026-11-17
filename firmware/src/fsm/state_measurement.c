@@ -2,6 +2,7 @@
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
 #include "hs/thresholds.h"
+#include "safety/safety.h"
 #include "ui/led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -188,6 +189,11 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected)
 
     if (event == STATE_EVENT_RESULT_TO_BLE || event == STATE_EVENT_RESULT_TO_STORE) {
         event = ble_connected ? STATE_EVENT_RESULT_TO_BLE : STATE_EVENT_RESULT_TO_STORE;
+    }
+
+    if (measurement_state == MEASUREMENT_STATE_M_IDLE &&
+        battery_level() == BATTERY_LEVEL_CRITICAL) {
+        return false;
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(measurement_transitions); i++) {

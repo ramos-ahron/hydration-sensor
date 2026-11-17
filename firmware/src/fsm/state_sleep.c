@@ -1,5 +1,4 @@
 #include "fsm/state_sleep.h"
-#include "fsm/state_machine.h"
 #include "ui/led.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
@@ -15,9 +14,8 @@ void state_sleep_run(state_e from)
     led_set(LED_WHITE);
 
     /**
-     * short: goes back to init, handled by transition table
-     * long: goes to shutdown, send battery critical
+     * System ON idle: main loop blocks and kernel idles
+     * short: wakes to INIT. Battery check handles shutdown
      */
     led_request(LED_PRIO_POWER, LED_WHITE, LED_PAT_BEAT, SLEEP_BEAT_MS, 0);
-    fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_BATTERY_CRITICAL);
 }
