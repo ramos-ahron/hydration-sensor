@@ -1,7 +1,6 @@
 #ifndef ENUM_TO_STRING_H
 #define ENUM_TO_STRING_H
 
-#include "fsm/state_battery_monitor.h"
 #include "fsm/state_ble.h"
 #include "fsm/state_common.h"
 #include "fsm/state_measurement.h"
@@ -33,7 +32,6 @@ static inline const char *empty_func(unsigned int val)
 #define led_color_to_string(color)         empty_func(color)
 #define measurement_state_to_string(state) empty_func(state)
 #define ble_state_to_string(state)         empty_func(state)
-#define battery_state_to_string(state)     empty_func(state)
 
 #else
 
@@ -86,16 +84,6 @@ const char *measurement_state_to_string(measurement_state_e state);
  *         @p state is not known.
  */
 const char *ble_state_to_string(ble_state_e state);
-
-/**
- * @brief Convert a battery monitor substate to its name for logging.
- *
- * @param[in] state  Battery state to convert.
- *
- * @return The name of the state, for example "BATTERY_LOW". The value is an empty string when
- *         @p state is not known.
- */
-const char *battery_state_to_string(battery_state_e state);
 
 #endif
 

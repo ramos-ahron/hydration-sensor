@@ -76,14 +76,6 @@ const char *state_event_to_string(state_event_e value)
             return "LINK_LOST";
         case STATE_EVENT_READVERTISE:
             return "READVERTISE";
-        case STATE_EVENT_BATTERY_BELOW:
-            return "BATTERY_BELOW";
-        case STATE_EVENT_BATTERY_RECOVERED:
-            return "BATTERY_RECOVERED";
-        case STATE_EVENT_BATTERY_BELOW_CRITICAL:
-            return "BATTERY_BELOW_CRITICAL";
-        case STATE_EVENT_BATTERY_ABOVE_CRITICAL:
-            return "BATTERY_ABOVE_CRITICAL";
         case STATE_EVENT_BATTERY_CHANGED:
             return "BATTERY_CHANGED";
         case STATE_EVENT_NONE:
@@ -149,19 +141,6 @@ const char *ble_state_to_string(ble_state_e value)
             return "CONNECTED";
         case BLE_STATE_DISCONNECTED:
             return "DISCONNECTED";
-    }
-    return "";
-}
-
-const char *battery_state_to_string(battery_state_e value)
-{
-    switch (value) {
-        case BATTERY_STATE_BATTERY_OK:
-            return "BATTERY_OK";
-        case BATTERY_STATE_BATTERY_LOW:
-            return "BATTERY_LOW";
-        case BATTERY_STATE_BATTERY_CRITICAL:
-            return "BATTERY_CRITICAL";
     }
     return "";
 }
