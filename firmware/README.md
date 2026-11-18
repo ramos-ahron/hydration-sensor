@@ -12,9 +12,10 @@
 
 The UART console has a shell. Every command starts with `hs`.
 
-| Command                  | What it does                                   |
-| ------------------------ | ---------------------------------------------- |
-| `hs press <short\|long>` | Injects a button press.                        |
-| `hs led`                 | Prints the color the LED is driving right now. |
-| `hs batt [<mv>\|auto]`   | Shows the battery reading, or overrides it.    |
-| `hs vbus [0\|1\|auto]`   | Shows charger detection, or overrides it.      |
+| Command                                              | What it does                                                                               |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `hs press <short\|long>`                             | Injects a button press.                                                                    |
+| `hs led`                                             | Prints the color the LED is driving right now.                                             |
+| `hs batt [<mv>\|auto]`                               | Shows the battery reading, or overrides it.                                                |
+| `hs vbus [0\|1\|auto]`                               | Shows charger detection, or overrides it.                                                  |
+| `hs store list [n]`, `stat`, `clear`, `fault <0\|1>` | Shows stored records as hex, shows counters, erases the log, or makes the next write fail. |

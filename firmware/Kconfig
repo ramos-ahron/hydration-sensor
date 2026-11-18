@@ -37,4 +37,9 @@ config BENCH_ALLOW_USB
 	help
 	  Lets a measurement start while charger power is present.
 
+config RECORD_SLOTS
+	int "Record capacity"
+	default 64
+	range 4 512
+
 source "Kconfig.zephyr"

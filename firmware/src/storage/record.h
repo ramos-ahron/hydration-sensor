@@ -46,6 +46,19 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id);
 int record_mark_sent(uint16_t id);
 
 /**
+ * Copies the oldest record that is not marked sent. The record stays in the log.
+ *
+ * @param[out] rec  Receives the record. Must hold RECORD_MAX_LEN bytes.
+ * @param[out] len  Receives the size of the record in bytes.
+ * @param[out] id   Receives the record ID. Can be NULL.
+ *
+ * @retval 0 on success
+ * @retval -ENOENT all records are marked sent, or the log is empty
+ * @retval -EIO a read failed
+ */
+int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id);
+
+/**
  * Copies a record out of the log. The record stays in the log.
  *
  * @param[in]  back 0 is the newest record. 1 is the record before it, and so on.
