@@ -45,3 +45,19 @@ byte   0      1      2      3      4        5        6 ...
      |  session_id |   sequence  | index  | count  | packet bytes |
      +------+------+------+------+--------+--------+--------------+
 ```
+
+### Decoder
+
+`tools/ble_decode.py` reads the field table and version from `src/ble/packet.h`, so it matches the firmware in the same checkout. Only the live mode needs bleak.
+
+```bash
+python firmware/tools/ble_decode.py --selftest
+```
+
+```bash
+python firmware/tools/ble_decode.py --hex <record hex from "hs store list">
+```
+
+```bash
+python firmware/tools/ble_decode.py --count 20
+```
