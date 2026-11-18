@@ -1,4 +1,5 @@
 #include "fsm/state_init.h"
+#include "ble/ble_service.h"
 #include "fsm/state_machine.h"
 #include "safety/safety.h"
 #include "storage/record.h"
@@ -23,6 +24,7 @@ void state_init_run(state_e from)
 
     int err = safety_init();
     err = err ? err : record_init();
+    err = err ? err : ble_init();
 
     if (err) { LOG_ERR("init failed (err %d)", err); }
     fsm_timer_start(FSM_TIMER_INIT, err ? STATE_EVENT_INIT_FAIL : STATE_EVENT_INIT_OK,

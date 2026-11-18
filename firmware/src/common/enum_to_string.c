@@ -74,6 +74,8 @@ const char *state_event_to_string(state_event_e value)
             return "LINK_LOST";
         case STATE_EVENT_READVERTISE:
             return "READVERTISE";
+        case STATE_EVENT_BLE_SUBSCRIBED:
+            return "BLE_SUBSCRIBED";
         case STATE_EVENT_BATTERY_CHANGED:
             return "BATTERY_CHANGED";
         case STATE_EVENT_NONE:
