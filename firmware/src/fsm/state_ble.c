@@ -39,7 +39,7 @@ static uint8_t tx_buf[RECORD_MAX_LEN];
 static size_t tx_len;
 static size_t tx_frag;
 static uint16_t tx_id;
-static struct ble_record tx_rec;
+static struct packet tx_rec;
 
 /**
  * @brief Post TX_KICK to the state machine when the tx_retry delay expires.
