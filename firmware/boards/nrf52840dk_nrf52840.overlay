@@ -38,6 +38,17 @@
         io-channels = <&adc 0>;
     };
 
+    fstab {
+        compatible = "zephyr,fstab";
+
+        sd_fs: sd_fs {
+            compatible = "zephyr,fstab,fatfs";
+            automount;
+            disk-access;
+            mount-point = "/SD:";
+        };
+    };
+
     leds {
         compatible = "gpio-leds";
 

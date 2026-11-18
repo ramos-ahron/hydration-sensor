@@ -19,3 +19,6 @@ The UART console has a shell. Every command starts with `hs`.
 | `hs batt [<mv>\|auto]`                               | Shows the battery reading, or overrides it.                                                |
 | `hs vbus [0\|1\|auto]`                               | Shows charger detection, or overrides it.                                                  |
 | `hs store list [n]`, `stat`, `clear`, `fault <0\|1>` | Shows stored records as hex, shows counters, erases the log, or makes the next write fail. |
+
+Records go to internal flash by default. To store them on an SD card instead, set
+`CONFIG_RECORD_STORAGE_SD=y`.
