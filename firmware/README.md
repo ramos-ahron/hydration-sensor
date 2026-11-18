@@ -22,3 +22,25 @@ The UART console has a shell. Every command starts with `hs`.
 
 Records go to internal flash by default. To store them on an SD card instead, set
 `CONFIG_RECORD_STORAGE_SD=y`.
+
+## BLE packet
+
+| Offset | Field          | Type | Notes                                    |
+| -----: | -------------- | ---- | ---------------------------------------- |
+|      0 | `version`      | u8   | 1                                        |
+|      1 | `session_id`   | u16  | Boot counter                             |
+|      3 | `timestamp_s`  | u32  | Seconds since boot                       |
+|      7 | `sequence`     | u16  | Record ID from the store. Wraps at 65536 |
+|      9 | `record_crc16` | u16  | CRC-16/CCITT-FALSE over bytes 0 to 8     |
+
+### Fragments
+
+Each notification carries one fragment: a 6-byte header, then packet bytes. At the default ATT
+MTU of 23 bytes, the 11-byte packet fits in one fragment of 17 bytes.
+
+```text
+byte   0      1      2      3      4        5        6 ...
+     +------+------+------+------+--------+--------+--------------+
+     |  session_id |   sequence  | index  | count  | packet bytes |
+     +------+------+------+------+--------+--------+--------------+
+```
