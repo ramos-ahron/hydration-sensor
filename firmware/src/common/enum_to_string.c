@@ -72,8 +72,8 @@ const char *state_event_to_string(state_event_e value)
             return "PAIRING_TIMEOUT";
         case STATE_EVENT_LINK_LOST:
             return "LINK_LOST";
-        case STATE_EVENT_READVERTISE:
-            return "READVERTISE";
+        case STATE_EVENT_BLE_IDLE:
+            return "BLE_IDLE";
         case STATE_EVENT_BLE_SUBSCRIBED:
             return "BLE_SUBSCRIBED";
         case STATE_EVENT_BATTERY_CHANGED:

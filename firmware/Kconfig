@@ -37,6 +37,11 @@ config BENCH_ALLOW_USB
 	help
 	  Lets a measurement start while charger power is present.
 
+config PAIRING_TIMEOUT_S
+	int "PAIRING window"
+	default 60
+	range 10 600
+
 config RECORD_SLOTS
 	int "Record capacity"
 	default 64
