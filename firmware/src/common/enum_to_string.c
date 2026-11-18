@@ -76,6 +76,10 @@ const char *state_event_to_string(state_event_e value)
             return "BLE_IDLE";
         case STATE_EVENT_BLE_SUBSCRIBED:
             return "BLE_SUBSCRIBED";
+        case STATE_EVENT_TX_KICK:
+            return "TX_KICK";
+        case STATE_EVENT_TX_DONE:
+            return "TX_DONE";
         case STATE_EVENT_BATTERY_CHANGED:
             return "BATTERY_CHANGED";
         case STATE_EVENT_NONE:
