@@ -2,6 +2,7 @@
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
 #include "hs/thresholds.h"
+#include "pipeline/pipeline.h"
 #include "safety/safety.h"
 #include "ui/led.h"
 #include <zephyr/kernel.h>
@@ -46,10 +47,12 @@ static measurement_state_e measurement_state;
  * The function first stores @p to as the current state. Then it asserts that the transition is
  * legal. Then it sets the LED and prepares for the new state:
  * - M_IDLE: LED off.
- * - MEASURING, PROCESSING: LED magenta.
+ * - MEASURING: LED magenta. The function calls pipeline_measure().
+ * - PROCESSING: LED magenta. The function calls pipeline_process().
  * - SENSOR_ERROR: LED red. The transition table handles the acknowledgement.
- * - RESULT_READY: LED green. The function posts RESULT_TO_BLE when @p ble_connected is true, and
- *   RESULT_TO_STORE when it is false.
+ * - RESULT_READY: The function posts RESULT_REJECTED when the pipeline result has a reject
+ *   reason. Otherwise it sets the LED green and posts RESULT_TO_BLE when @p ble_connected is true,
+ *   and RESULT_TO_STORE when it is false.
  * - TRANSMIT: The LED does not change.
  * - STORE_LOCAL: The LED does not change.
  * - STORAGE_ERROR: LED yellow.
@@ -100,8 +103,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
 
             led_set(LED_MAGENTA);
 
-            fsm_stub(STATE_EVENT_ACQUIRED_SAMPLES, STATE_EVENT_ACQUIRED_SAMPLES,
-                     STATE_EVENT_SENSOR_FAULT);
+            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+            pipeline_measure();
 
             break;
 
@@ -110,7 +113,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
 
             led_set(LED_MAGENTA);
 
-            fsm_stub(STATE_EVENT_COMPUTE_DONE, STATE_EVENT_COMPUTE_DONE, STATE_EVENT_SENSOR_FAULT);
+            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+            pipeline_process();
 
             break;
 
@@ -127,6 +131,12 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
 
         case MEASUREMENT_STATE_RESULT_READY: {
             __ASSERT(from == MEASUREMENT_STATE_PROCESSING, "RESULT_READY entered from %d", from);
+
+            if (pipeline_result()->reject != REJECT_NONE) {
+                fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
+                fsm_post(STATE_EVENT_RESULT_REJECTED);
+                break;
+            }
 
             led_set(LED_GREEN);
 
