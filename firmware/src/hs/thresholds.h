@@ -14,4 +14,8 @@
 #define BATT_CRITICAL_MV 2400
 #define BATT_MARGIN_MV   100
 
+/* Motion */
+#define ACCEL_WINDOW_SAMPLES   32
+#define ACCEL_SAMPLE_PERIOD_MS 10
+
 #endif  // THRESHOLDS_H
