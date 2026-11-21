@@ -31,8 +31,7 @@ void state_ble_run(void);
  * When @p measurement_busy is true, the function ignores BUTTON_LONG.
  *
  * @param[in] event             Event to process.
- * @param[in] measurement_busy  true when the measurement state is MEASURING, PROCESSING or
- *                              TRANSMIT.
+ * @param[in] measurement_busy  true when the measurement state is MEASURING or PROCESSING.
  *
  * @return true when a nested transition used the event, and false when no transition used it.
  */

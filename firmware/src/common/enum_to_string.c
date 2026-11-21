@@ -54,12 +54,8 @@ const char *state_event_to_string(state_event_e value)
             return "COMPUTE_DONE";
         case STATE_EVENT_RESULT_REJECTED:
             return "RESULT_REJECTED";
-        case STATE_EVENT_RESULT_TO_BLE:
-            return "RESULT_TO_BLE";
         case STATE_EVENT_RESULT_TO_STORE:
             return "RESULT_TO_STORE";
-        case STATE_EVENT_TRANSMIT_DONE:
-            return "TRANSMIT_DONE";
         case STATE_EVENT_STORE_DONE_CONTINUOUS:
             return "STORE_DONE_CONTINUOUS";
         case STATE_EVENT_STORE_DONE_OTHER:
@@ -124,8 +120,6 @@ const char *measurement_state_to_string(measurement_state_e value)
             return "SENSOR_ERROR";
         case MEASUREMENT_STATE_RESULT_READY:
             return "RESULT_READY";
-        case MEASUREMENT_STATE_TRANSMIT:
-            return "TRANSMIT";
         case MEASUREMENT_STATE_STORE_LOCAL:
             return "STORE_LOCAL";
         case MEASUREMENT_STATE_STORAGE_ERROR:

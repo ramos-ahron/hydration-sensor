@@ -1,9 +1,11 @@
 #include "fsm/state_measurement.h"
+#include "ble/packet.h"
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
 #include "hs/thresholds.h"
 #include "pipeline/pipeline.h"
 #include "safety/safety.h"
+#include "storage/record.h"
 #include "ui/led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -28,10 +30,7 @@ static const struct measurement_transition measurement_transitions[] = {
     { MEASUREMENT_STATE_PROCESSING, STATE_EVENT_COMPUTE_DONE, MEASUREMENT_STATE_RESULT_READY },
     { MEASUREMENT_STATE_SENSOR_ERROR, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_REJECTED, MEASUREMENT_STATE_M_IDLE },
-    { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_TO_BLE, MEASUREMENT_STATE_TRANSMIT },
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_TO_STORE, MEASUREMENT_STATE_STORE_LOCAL },
-    { MEASUREMENT_STATE_TRANSMIT, STATE_EVENT_RETRY, MEASUREMENT_STATE_TRANSMIT },
-    { MEASUREMENT_STATE_TRANSMIT, STATE_EVENT_TRANSMIT_DONE, MEASUREMENT_STATE_STORE_LOCAL },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_CONTINUOUS,
       MEASUREMENT_STATE_MEASURING },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_OTHER, MEASUREMENT_STATE_M_IDLE },
@@ -40,6 +39,23 @@ static const struct measurement_transition measurement_transitions[] = {
 };
 
 static measurement_state_e measurement_state;
+
+/**
+ * @brief Stores the result as an unsent packet. The BLE region sends it later.
+ *
+ * @return 0 on success, or the error from record_put().
+ */
+static int store_result(void)
+{
+    struct packet pkt;
+    uint8_t buf[PACKET_SIZE];
+
+    packet_init(&pkt, record_session_id(), (uint32_t)(k_uptime_get() / MSEC_PER_SEC),
+                record_next_id());
+    const size_t len = packet_serialize(&pkt, buf);
+
+    return record_put(buf, len, false, NULL);
+}
 
 /**
  * @brief Enter a measurement substate.
@@ -51,17 +67,16 @@ static measurement_state_e measurement_state;
  * - PROCESSING: LED magenta. The function calls pipeline_process().
  * - SENSOR_ERROR: LED red. The transition table handles the acknowledgement.
  * - RESULT_READY: The function posts RESULT_REJECTED when the pipeline result has a reject
- *   reason. Otherwise it sets the LED green and posts RESULT_TO_BLE when @p ble_connected is true,
- *   and RESULT_TO_STORE when it is false.
- * - TRANSMIT: The LED does not change.
- * - STORE_LOCAL: The LED does not change.
+ *   reason. Otherwise it sets the LED green and posts RESULT_TO_STORE.
+ * - STORE_LOCAL: The LED does not change. The function stores the result as unsent and posts
+ *   TX_KICK, so the BLE region sends it when a phone is connected. A failed write posts
+ *   WRITE_ERROR.
  * - STORAGE_ERROR: LED yellow.
  *
- * @param[in] from           State that the machine leaves.
- * @param[in] to             State that the machine enters.
- * @param[in] ble_connected  true when BLE is connected.
+ * @param[in] from  State that the machine leaves.
+ * @param[in] to    State that the machine enters.
  */
-static void measurement_enter(measurement_state_e from, measurement_state_e to, bool ble_connected)
+static void measurement_enter(measurement_state_e from, measurement_state_e to)
 {
     ARG_UNUSED(from);
     measurement_state = to;
@@ -139,33 +154,24 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
             }
 
             led_set(LED_GREEN);
-
-            // BLE connection changes our next state
-            const state_event_e next =
-                ble_connected ? STATE_EVENT_RESULT_TO_BLE : STATE_EVENT_RESULT_TO_STORE;
-
-            fsm_stub(next, next, STATE_EVENT_RESULT_REJECTED);
+            fsm_post(STATE_EVENT_RESULT_TO_STORE);
 
             break;
         }
 
-        case MEASUREMENT_STATE_TRANSMIT:
-            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY || from == MEASUREMENT_STATE_TRANSMIT,
-                     "TRANSMIT entered from %d", from);
-
-            fsm_stub(STATE_EVENT_TRANSMIT_DONE, STATE_EVENT_TRANSMIT_DONE, STATE_EVENT_NONE);
-
-            break;
-
         case MEASUREMENT_STATE_STORE_LOCAL: {
-            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY || from == MEASUREMENT_STATE_TRANSMIT,
-                     "STORE_LOCAL entered from %d", from);
+            __ASSERT(from == MEASUREMENT_STATE_RESULT_READY, "STORE_LOCAL entered from %d", from);
 
-            const state_event_e next = IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)
-                                           ? STATE_EVENT_STORE_DONE_CONTINUOUS
-                                           : STATE_EVENT_STORE_DONE_OTHER;
+            // Every result is stored before it is sent. The BLE region sends unsent records.
+            if (store_result() != 0) {
+                fsm_post(STATE_EVENT_WRITE_ERROR);
+                break;
+            }
 
-            fsm_stub(next, next, STATE_EVENT_WRITE_ERROR);
+            fsm_post(IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)
+                         ? STATE_EVENT_STORE_DONE_CONTINUOUS
+                         : STATE_EVENT_STORE_DONE_OTHER);
+            fsm_post(STATE_EVENT_TX_KICK);
 
             break;
         }
@@ -184,21 +190,16 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to, 
 bool state_measurement_busy(void)
 {
     return measurement_state == MEASUREMENT_STATE_MEASURING ||
-           measurement_state == MEASUREMENT_STATE_PROCESSING ||
-           measurement_state == MEASUREMENT_STATE_TRANSMIT;
+           measurement_state == MEASUREMENT_STATE_PROCESSING;
 }
 
 bool state_measurement_idle(void) { return measurement_state == MEASUREMENT_STATE_M_IDLE; }
 
-bool state_measurement_process_event(state_event_e event, bool ble_connected)
+bool state_measurement_process_event(state_event_e event)
 {
     if (event == STATE_EVENT_BUTTON_SHORT && measurement_state == MEASUREMENT_STATE_M_IDLE &&
         !IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
         return false;
-    }
-
-    if (event == STATE_EVENT_RESULT_TO_BLE || event == STATE_EVENT_RESULT_TO_STORE) {
-        event = ble_connected ? STATE_EVENT_RESULT_TO_BLE : STATE_EVENT_RESULT_TO_STORE;
     }
 
     if (measurement_state == MEASUREMENT_STATE_M_IDLE &&
@@ -211,7 +212,7 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected)
         if (t->from == measurement_state && t->event == event) {
             LOG_INF("%s -> %s (%s)", measurement_state_to_string(t->from),
                     measurement_state_to_string(t->to), state_event_to_string(event));
-            measurement_enter(t->from, t->to, ble_connected);
+            measurement_enter(t->from, t->to);
             return true;
         }
     }
@@ -221,5 +222,5 @@ bool state_measurement_process_event(state_event_e event, bool ble_connected)
 void state_measurement_run(void)
 {
     LOG_INF("MEASUREMENT start -> %s", measurement_state_to_string(MEASUREMENT_STATE_M_IDLE));
-    measurement_enter(MEASUREMENT_STATE_M_IDLE, MEASUREMENT_STATE_M_IDLE, false);
+    measurement_enter(MEASUREMENT_STATE_M_IDLE, MEASUREMENT_STATE_M_IDLE);
 }

@@ -56,11 +56,10 @@ bool state_active_process_event(state_event_e event)
      *  1. Measurement
      *  2. BLE
      */
-    const bool ble_connected = state_ble_connected();
     const bool measurement_busy = state_measurement_busy();
     bool consumed = false;
     // TODO: check if busy pairing in addition
-    consumed |= state_measurement_process_event(event, ble_connected);
+    consumed |= state_measurement_process_event(event);
     consumed |= state_ble_process_event(event, measurement_busy);
     return consumed;
 }
