@@ -104,3 +104,12 @@ void pipeline_measure(void) { (void)k_work_submit_to_queue(&pipeline_q, &measure
 void pipeline_process(void) { (void)k_work_submit_to_queue(&pipeline_q, &process_work); }
 
 const struct result *pipeline_result(void) { return &result; }
+
+void pipeline_stop(void)
+{
+    struct k_work_sync sync;
+
+    (void)k_work_cancel_sync(&measure_work, &sync);
+    (void)k_work_cancel_sync(&process_work, &sync);
+    (void)afe_stop();
+}

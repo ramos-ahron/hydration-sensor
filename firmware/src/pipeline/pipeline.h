@@ -32,4 +32,13 @@ void pipeline_process(void);
  */
 const struct result *pipeline_result(void);
 
+/**
+ * @brief Cancels a pending step, waits for a running step to end and stops the drive.
+ *
+ * The drive is off when the function returns, and the FSM thread may use the AFE. A step that
+ * ended may still have posted its event. The function blocks, so call it only from the FSM
+ * thread.
+ */
+void pipeline_stop(void);
+
 #endif  // PIPELINE_H

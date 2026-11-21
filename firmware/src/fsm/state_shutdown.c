@@ -1,6 +1,7 @@
 #include "fsm/state_shutdown.h"
 #include "ble/ble_service.h"
 #include "fsm/state_machine.h"
+#include "pipeline/pipeline.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
@@ -10,6 +11,8 @@ void state_shutdown_run(state_e from)
              "SHUTDOWN entered from %d", from);
     ARG_UNUSED(from);
 
+    // A battery event can leave ACTIVE during a sweep. Turn the drive off first.
+    pipeline_stop();
     ble_adv_stop();
     ble_disconnect();
 }
