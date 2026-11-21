@@ -346,7 +346,7 @@ int record_clear(void)
     k_mutex_lock(&lock, K_FOREVER);
     for (uint16_t i = 0; i < SLOTS && !rc; i++) {
         if (mirror[i].valid) {
-            snprintf(key, sizeof(key), "hs/r/%u", i);
+            slot_key(key, i);
             rc = settings_delete(key) ? -EIO : 0;
             mirror[i].valid = 0;
         }

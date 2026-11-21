@@ -18,7 +18,7 @@ void state_active_run(state_e from);
  *
  * When BLE is pairing, only the BLE region gets BUTTON_SHORT. The active state blocks SLEEP_GUARD
  * when the measurement is not idle or when BLE is pairing. Every other event goes to the
- * measurement, BLE and battery monitor regions, in that order.
+ * measurement and BLE regions, in that order. BATTERY_CHANGED updates the battery LED.
  *
  * @param[in] event  Event to process.
  *

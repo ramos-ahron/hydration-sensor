@@ -20,7 +20,7 @@ typedef enum {
 /**
  * @brief Enter the initial BLE substate.
  *
- * At this time, the function logs the transition to BLE_IDLE. It does not change the LED.
+ * The function disconnects the current link and advertises to bonded peers only.
  */
 void state_ble_run(void);
 
@@ -36,13 +36,6 @@ void state_ble_run(void);
  * @return true when a nested transition used the event, and false when no transition used it.
  */
 bool state_ble_process_event(state_event_e event, bool measurement_busy);
-
-/**
- * @brief Check if the BLE subsystem is connected.
- *
- * @return true when BLE is connected, and false when it is not.
- */
-bool state_ble_connected(void);
 
 /**
  * @brief Check if the BLE subsystem is pairing.

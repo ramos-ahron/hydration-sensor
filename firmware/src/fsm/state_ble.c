@@ -153,8 +153,6 @@ static void send_next_unsent(void)
     }
 }
 
-bool state_ble_connected(void) { return ble_state == BLE_STATE_CONNECTED; }
-
 bool state_ble_pairing(void) { return ble_state == BLE_STATE_PAIRING; }
 
 bool state_ble_process_event(state_event_e event, bool measurement_busy)
@@ -193,9 +191,6 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
 
 void state_ble_run(void)
 {
-    ble_state = BLE_STATE_BLE_IDLE;
-    sync_reset();
-    ble_disconnect();
-    ble_adv_bonded();
+    ble_enter(BLE_STATE_BLE_IDLE, BLE_STATE_BLE_IDLE);
     LOG_INF("BLE start -> %s", ble_state_to_string(ble_state));
 }

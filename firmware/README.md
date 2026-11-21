@@ -22,9 +22,6 @@ The UART console has a shell. Every command starts with `hs`.
 | `hs ble stat`, `hs ble unpair`                       | Shows the link state, or removes every bond.                                               |
 | `hs ctx`                                             | Reads the accelerometer and the temperature sensor.                                        |
 
-Records go to internal flash by default. To store them on an SD card instead, set
-`CONFIG_RECORD_STORAGE_SD=y`.
-
 ## BLE packet
 
 | Offset | Field          | Type | Notes                                    |

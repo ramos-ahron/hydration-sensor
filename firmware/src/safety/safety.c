@@ -30,7 +30,6 @@ static bool batt_adc_ok;
 #endif
 
 static bool inited;
-static int init_err;
 static bool reset_read;
 static bool reset_wdt;
 static bool wdt_ok;
@@ -149,7 +148,7 @@ int safety_init(void)
     const struct device *hw_wdt = NULL;
     int err;
 
-    if (inited) { return init_err; }
+    if (inited) { return 0; }
     inited = true;
     reset_cause_read();
 
@@ -176,8 +175,7 @@ int safety_init(void)
 
     batt_evaluate(false);
     (void)k_work_schedule(&batt_work, K_MSEC(BATTERY_PERIOD_MS));
-    init_err = 0;
-    return init_err;
+    return 0;
 }
 
 bool safety_vbus_present(void)

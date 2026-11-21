@@ -49,26 +49,12 @@ void ble_adv_stop(void);
 void ble_disconnect(void);
 
 /**
- * @brief Check if a central is connected.
- *
- * @return true from CONNECTION_COMPLETE until LINK_LOST, and false at other times.
- */
-bool ble_is_connected(void);
-
-/**
  * @brief Check if the connected peer can receive packets.
  *
  * @return true when the link is encrypted and the peer turned on notifications, and false when
  *         it is not.
  */
 bool ble_subscribed(void);
-
-/**
- * @brief Check if a bond is stored.
- *
- * @return true when at least one bond is stored, and false when no bond is stored.
- */
-bool ble_has_bond(void);
 
 /**
  * @brief Queue one serialized packet as notifications.

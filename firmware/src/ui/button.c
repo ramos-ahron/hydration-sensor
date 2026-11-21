@@ -1,19 +1,14 @@
-#include "ui/button.h"
 #include "fsm/state_machine.h"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
 /**
  * @brief Input callback that changes button presses into FSM events.
  *
  * The function ignores all input events that are not key presses. INPUT_KEY_A posts
- * STATE_EVENT_BUTTON_SHORT to fsm_msgq. INPUT_KEY_X posts STATE_EVENT_BUTTON_LONG to fsm_msgq.
- * The function does not block, and it ignores other key codes. When the queue is full, the
- * function drops the event and logs a warning.
+ * STATE_EVENT_BUTTON_SHORT and INPUT_KEY_X posts STATE_EVENT_BUTTON_LONG with fsm_post(). The
+ * function does not block, and it ignores other key codes.
  *
  * @param[in] evt        Input event from the input subsystem.
  * @param[in] user_data  The function does not use this value.
@@ -38,10 +33,7 @@ static void button_cb(struct input_event *evt, void *user_data)
             return;
     }
 
-    // Drop events if queue is full.
-    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
-        LOG_WRN("FSM queue full, dropped button event");
-    }
+    fsm_post(event);
 }
 
-INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_NODELABEL(btn_press)), button_cb, NULL);
+INPUT_CALLBACK_DEFINE(DEVICE_DT_GET(DT_ALIAS(btn_press)), button_cb, NULL);

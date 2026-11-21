@@ -47,32 +47,4 @@ config RECORD_SLOTS
 	default 64
 	range 4 512
 
-choice RECORD_STORAGE
-	prompt "Record storage"
-	default RECORD_STORAGE_INTERNAL
-
-config RECORD_STORAGE_INTERNAL
-	bool "Internal flash"
-	help
-	  Settings on NVS in the internal flash.
-
-config RECORD_STORAGE_SD
-	bool "SD card"
-	select FILE_SYSTEM
-	select FAT_FILESYSTEM_ELM
-	select DISK_DRIVERS
-	imply FS_FATFS_FSTAB_AUTOMOUNT
-	help
-	  Settings in a file on a FAT SD card. The board overlay must have a disk
-	  node with disk-name "SD".
-
-endchoice
-
-choice SETTINGS_BACKEND
-	default SETTINGS_FILE if RECORD_STORAGE_SD
-endchoice
-
-config SETTINGS_FILE_PATH
-	default "/SD:/hs/settings" if RECORD_STORAGE_SD
-
 source "Kconfig.zephyr"

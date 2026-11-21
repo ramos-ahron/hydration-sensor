@@ -76,8 +76,6 @@ const char *state_event_to_string(state_event_e value)
             return "TX_DONE";
         case STATE_EVENT_BATTERY_CHANGED:
             return "BATTERY_CHANGED";
-        case STATE_EVENT_NONE:
-            return "NONE";
     }
     return "";
 }

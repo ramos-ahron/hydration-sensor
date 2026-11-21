@@ -88,7 +88,7 @@ int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bo
 /**
  * @brief Counts the records in the log.
  *
- * @return Number of records in the log. The maximum is CONFIG_HS_RECORD_STORE_SLOTS.
+ * @return Number of records in the log. The maximum is CONFIG_RECORD_SLOTS.
  */
 uint16_t record_count(void);
 

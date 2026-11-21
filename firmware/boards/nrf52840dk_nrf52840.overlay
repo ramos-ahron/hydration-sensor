@@ -1,14 +1,9 @@
-/**
- * For more help, browse the devicetree documentation at https://docs.zephyrproject.org/latest/build/dts/index.html
- * You can also visit the nRF DeviceTree extension documentation at
- * https://docs.nordicsemi.com/bundle/nrf-connect-vscode/page/guides/ncs_configure_app.html#devicetree-support-in-the-extension
- */
-
 / {
     aliases {
         temp0 = &mcp9808;
         accel0 = &adxl362;
         ext-btn = &ext_btn;
+        btn-press = &btn_press;
         red-led = &red_led;
         green-led = &green_led;
         blue-led = &blue_led;
@@ -36,17 +31,6 @@
     // Initialize battery monitor
     zephyr,user {
         io-channels = <&adc 0>;
-    };
-
-    fstab {
-        compatible = "zephyr,fstab";
-
-        sd_fs: sd_fs {
-            compatible = "zephyr,fstab,fatfs";
-            automount;
-            disk-access;
-            mount-point = "/SD:";
-        };
     };
 
     leds {
@@ -87,9 +71,6 @@
 };
 
 &i2c0 {
-    status = "okay";
-    clock-frequency = <I2C_BITRATE_STANDARD>;
-
     mcp9808: jc42@18 {
         /** Migration to Zephyr v4.0, which is used by NCS v3.2.4 migrates
          *  MCP9808 driver to a generic JEDEC JC-42.4. Source found in
@@ -101,15 +82,13 @@
     };
 };
 
+// The board puts the SPI1 MISO pin on P1.08. The button uses P1.08, so keep SPI1 off.
 &spi1 {
     status = "disabled";
 };
 
 &spi2 {
     status = "okay";
-    pinctrl-0 = <&spi2_default>;
-    pinctrl-1 = <&spi2_sleep>;
-    pinctrl-names = "default", "sleep";
     cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
 
     adxl362: adxl362@0 {
@@ -122,7 +101,6 @@
 &adc {
     #address-cells = <1>;
     #size-cells = <0>;
-    status = "okay";
 
     channel@0 {
         reg = <0>;

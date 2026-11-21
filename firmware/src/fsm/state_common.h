@@ -52,9 +52,6 @@ typedef enum {
 
     // Battery
     STATE_EVENT_BATTERY_CHANGED,
-
-    // Temp
-    STATE_EVENT_NONE,
 } state_event_e;
 
 #endif  // STATE_COMMON_H

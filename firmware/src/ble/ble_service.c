@@ -339,8 +339,6 @@ void ble_disconnect(void)
     if (err) { LOG_ERR("Disconnect failed (err %d)", err); }
 }
 
-bool ble_is_connected(void) { return current_conn != NULL; }
-
 /**
  * @brief Check if a link can receive packets.
  *
@@ -358,8 +356,6 @@ static bool subscribed(struct bt_conn *conn)
 }
 
 bool ble_subscribed(void) { return subscribed(current_conn); }
-
-bool ble_has_bond(void) { return bond_count() > 0; }
 
 /**
  * @brief Post TX_DONE when the stack sent the last fragment of a packet.
