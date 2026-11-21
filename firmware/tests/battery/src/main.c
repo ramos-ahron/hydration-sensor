@@ -12,7 +12,13 @@
 
 ZTEST_SUITE(battery, NULL, NULL, NULL, NULL, NULL);
 
-/** Feeds @p mv many times from @p prev and checks the level settles at @p want and stays. */
+/**
+ * @brief Feeds a voltage many times and checks that the level settles and stays.
+ *
+ * @param[in] prev  Level before the first reading.
+ * @param[in] mv    Battery voltage in mV.
+ * @param[in] want  Level that batt_classify() must return for every reading.
+ */
 static void hold(battery_level_e prev, int mv, battery_level_e want)
 {
     battery_level_e lvl = prev;

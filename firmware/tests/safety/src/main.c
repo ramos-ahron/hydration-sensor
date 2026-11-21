@@ -9,13 +9,23 @@ extern void safety_set_vbus_override(int v);
 
 static int batt_events;
 
-/** Stand-in for the state machine: counts battery events only. */
+/**
+ * @brief Stand-in for the state machine. It counts battery events only.
+ *
+ * @param[in] event  Event that the safety module posts.
+ */
 void fsm_post(state_event_e event)
 {
     if (event == STATE_EVENT_BATTERY_CHANGED) { batt_events++; }
 }
 
-/** Sets the override and checks the level and the number of events it posted. */
+/**
+ * @brief Sets the battery override and checks the level and the number of events it posted.
+ *
+ * @param[in] mv           Battery voltage in mV.
+ * @param[in] want         Level that battery_level() must return.
+ * @param[in] want_events  Number of BATTERY_CHANGED events that the override must post.
+ */
 static void step(int mv, battery_level_e want, int want_events)
 {
     const int before = batt_events;
@@ -26,12 +36,22 @@ static void step(int mv, battery_level_e want, int want_events)
     zassert_equal(battery_mv(), mv);
 }
 
+/**
+ * @brief Starts the safety module one time before the suite.
+ *
+ * @return NULL. The suite has no fixture.
+ */
 static void *setup(void)
 {
     zassert_equal(safety_init(), 0);
     return NULL;
 }
 
+/**
+ * @brief Sets the battery to OK and the VBUS to absent before each test.
+ *
+ * @param[in] f  Test fixture. The function does not use this value.
+ */
 static void before(void *f)
 {
     ARG_UNUSED(f);

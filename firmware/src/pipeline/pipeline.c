@@ -35,6 +35,15 @@ static bool failed(int err, const char *name)
     return err != 0;
 }
 
+/**
+ * @brief Work handler that acquires the samples.
+ *
+ * The function clears the result. If safety_check() fails, it sets REJECT_CHARGING and posts
+ * ACQUIRED_SAMPLES. Otherwise it runs afe_measure() with the drive on. A failed measurement stops
+ * the AFE, sets REJECT_AFE, and posts SENSOR_FAULT. A good measurement posts ACQUIRED_SAMPLES.
+ *
+ * @param[in] work  Work item that ran. The function does not use this value.
+ */
 static void measure_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
@@ -59,6 +68,15 @@ static void measure_handler(struct k_work *work)
     fsm_post(STATE_EVENT_ACQUIRED_SAMPLES);
 }
 
+/**
+ * @brief Work handler that computes the result.
+ *
+ * The function runs bioz_calibrate(), bioz_fit(), bioz_quality() and bioz_score() in this order.
+ * It stops at the first step that fails and sets REJECT_MATH. The function always posts
+ * COMPUTE_DONE.
+ *
+ * @param[in] work  Work item that ran. The function does not use this value.
+ */
 static void process_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
@@ -88,6 +106,13 @@ static struct k_work_q pipeline_q;
 static K_WORK_DEFINE(measure_work, measure_handler);
 static K_WORK_DEFINE(process_work, process_handler);
 
+/**
+ * @brief Starts the pipeline work queue.
+ *
+ * Zephyr calls this function at boot through SYS_INIT.
+ *
+ * @retval 0  Always.
+ */
 static int pipeline_init(void)
 {
     static const struct k_work_queue_config cfg = { .name = "pipeline" };

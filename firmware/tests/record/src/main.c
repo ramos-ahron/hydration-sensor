@@ -6,6 +6,11 @@
 
 #define SLOTS CONFIG_RECORD_SLOTS
 
+/**
+ * @brief Starts the log, deletes all records, and turns the test fault off before each test.
+ *
+ * @param[in] f  Test fixture. The function does not use this value.
+ */
 static void before(void *f)
 {
     zassert_ok(record_init());
@@ -14,6 +19,16 @@ static void before(void *f)
 }
 ZTEST_SUITE(record, NULL, NULL, before, NULL, NULL);
 
+/**
+ * @brief Adds a 3-byte record to the log.
+ *
+ * The record bytes are @p tag, @p tag + 1 and @p tag + 2.
+ *
+ * @param[in] tag   First byte of the record.
+ * @param[in] sent  true if the record is already sent.
+ *
+ * @return ID of the new record.
+ */
 static uint16_t put_n(uint8_t tag, bool sent)
 {
     uint8_t r[3] = { tag, tag + 1, tag + 2 };

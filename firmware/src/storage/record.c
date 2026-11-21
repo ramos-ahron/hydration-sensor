@@ -367,6 +367,10 @@ int record_clear(void)
  * The default for @p n is 5. Each line shows the ID, the sent flag, the size, and the
  * record bytes in hexadecimal. The list stops early if the log holds fewer records.
  *
+ * @param[in] sh    Shell that received the command.
+ * @param[in] argc  Number of arguments.
+ * @param[in] argv  Arguments. The optional @c argv[1] is the number of records to print.
+ *
  * @retval 0  Always.
  */
 static int cmd_list(const struct shell *sh, size_t argc, char **argv)
@@ -395,6 +399,10 @@ static int cmd_list(const struct shell *sh, size_t argc, char **argv)
  * The counters are the record count, the unsent count, the lost count, the session ID,
  * and the number of slots.
  *
+ * @param[in] sh    Shell that received the command.
+ * @param[in] argc  Number of arguments. The function does not use this value.
+ * @param[in] argv  Arguments. The function does not use these values.
+ *
  * @retval 0  Always.
  */
 static int cmd_stat(const struct shell *sh, size_t argc, char **argv)
@@ -407,6 +415,10 @@ static int cmd_stat(const struct shell *sh, size_t argc, char **argv)
 /**
  * @brief "hs store clear": deletes all records. See record_clear().
  *
+ * @param[in] sh    Shell that received the command. The function does not use this value.
+ * @param[in] argc  Number of arguments. The function does not use this value.
+ * @param[in] argv  Arguments. The function does not use these values.
+ *
  * @retval 0     All records are deleted.
  * @retval -EIO  A delete or write failed.
  */
@@ -417,6 +429,10 @@ static int cmd_clear(const struct shell *sh, size_t argc, char **argv) { return 
  *
  * A number other than 0 makes record_put() fail with -EIO. 0 stops the fault. A value
  * that is not a number counts as 0.
+ *
+ * @param[in] sh    Shell that received the command. The function does not use this value.
+ * @param[in] argc  Number of arguments. The function does not use this value.
+ * @param[in] argv  Arguments. @c argv[1] is the fault value.
  *
  * @retval 0  Always.
  */

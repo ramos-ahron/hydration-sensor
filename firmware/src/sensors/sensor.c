@@ -42,6 +42,13 @@ float a_rms(const float (*a)[3], size_t n)
     return sqrtf(sum / (float)n);
 }
 
+/**
+ * @brief Checks that a device can be used.
+ *
+ * @param[in] dev  Device to check. Can be NULL.
+ *
+ * @return true when @p dev is not NULL and is ready, and false when it is not.
+ */
 static bool dev_usable(const struct device *dev) { return dev != NULL && device_is_ready(dev); }
 
 int sensor_init(void)
@@ -118,6 +125,10 @@ void set_override(const struct override *o)
  *
  * The command blocks for the motion window if the accelerometer override is not active.
  * It prints a_rms as an integer in mm/s^2, so the output needs no float support in printf.
+ *
+ * @param[in] sh    Shell that received the command.
+ * @param[in] argc  Number of arguments. The function does not use this value.
+ * @param[in] argv  Arguments. The function does not use these values.
  *
  * @retval 0  Always.
  */

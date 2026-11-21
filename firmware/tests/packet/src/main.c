@@ -7,6 +7,12 @@
 
 ZTEST_SUITE(packet, NULL, NULL, NULL, NULL, NULL);
 
+/**
+ * @brief Fills a packet with fixed test values.
+ *
+ * @param[out] pkt  Receives the packet. The session ID is 0x0506, the timestamp is 0x090A0B0C, and
+ *                  the sequence is 0x0708.
+ */
 static void mk_pkt(struct packet *pkt) { packet_init(pkt, 0x0506, 0x090A0B0C, 0x0708); }
 
 ZTEST(packet, test_size_and_crc_algo)
@@ -74,7 +80,16 @@ ZTEST(packet, test_parse_rejects)
     zassert_equal(b.version, 0xA5, "pkt changed on a failed parse");
 }
 
-/** Builds every fragment, checks each header, and joins the payloads into @p out. */
+/**
+ * @brief Builds every fragment, checks each header, and joins the payloads.
+ *
+ * @param[in]  pkt  Serialized packet.
+ * @param[in]  len  Size of @p pkt in bytes.
+ * @param[in]  att  ATT payload size for each fragment, in bytes.
+ * @param[out] out  Receives the joined payloads. Must hold @p len bytes.
+ *
+ * @return Number of payload bytes in @p out.
+ */
 static size_t reassemble(const uint8_t *pkt, size_t len, size_t att, uint8_t *out)
 {
     uint8_t f[244];

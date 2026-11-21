@@ -11,7 +11,9 @@
 // TODO: add uptime time to record and ble
 
 /**
- * Starts the log. Reads the saved state and adds 1 to the boot counter.
+ * @brief Starts the log.
+ *
+ * Reads the saved state and adds 1 to the boot counter.
  *
  * @retval 0 on success
  * @retval -EIO the saved state cannot be written
@@ -20,13 +22,13 @@
 int record_init(void);
 
 /**
- * Adds a record at the newest position.
+ * @brief Adds a record at the newest position.
  *
- * @param[in]  rec  Record bytes.
- * @param[in]  len  Size of @p rec in bytes. Must range from 1 to RECORD_MAX_LEN.
- * @param[in]  sent true if the record is already sent.
- * @param[out] id   Receives the record ID. The ID increases by 1 for each record and wraps
- *                  at 65536.
+ * @param[in]  rec   Record bytes.
+ * @param[in]  len   Size of @p rec in bytes. Must range from 1 to RECORD_MAX_LEN.
+ * @param[in]  sent  true if the record is already sent.
+ * @param[out] id    Receives the record ID. The ID increases by 1 for each record and wraps
+ *                   at 65536.
  *
  * @retval 0 on success
  * @retval -EIO a write failed, or the test fault is on. The log does not change.
@@ -35,15 +37,19 @@ int record_init(void);
 int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id);
 
 /**
- * @return ID that the next successful record_put() returns. Use it to put the ID in the record
- *         before it is stored. Only one thread may call record_put().
+ * @brief Gives the ID that the next record gets.
+ *
+ * Use the ID to put it in the record before the record is stored. Only one thread may call
+ * record_put().
+ *
+ * @return ID that the next successful record_put() returns.
  */
 uint16_t record_next_id(void);
 
 /**
- * Sets the sent flag on a record.
+ * @brief Sets the sent flag on a record.
  *
- * @param id ID that record_put() returned.
+ * @param[in] id  ID that record_put() returned.
  *
  * @retval 0 on success, or the record is already marked sent
  * @retval -ENOENT the log no longer holds this ID
@@ -52,7 +58,7 @@ uint16_t record_next_id(void);
 int record_mark_sent(uint16_t id);
 
 /**
- * Copies the oldest record that is not marked sent. The record stays in the log.
+ * @brief Copies the oldest record that is not marked sent. The record stays in the log.
  *
  * @param[out] rec  Receives the record. Must hold RECORD_MAX_LEN bytes.
  * @param[out] len  Receives the size of the record in bytes.
@@ -65,13 +71,13 @@ int record_mark_sent(uint16_t id);
 int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id);
 
 /**
- * Copies a record out of the log. The record stays in the log.
+ * @brief Copies a record out of the log. The record stays in the log.
  *
- * @param[in]  back 0 is the newest record. 1 is the record before it, and so on.
- * @param[out] rec  Receives the record. Must hold RECORD_MAX_LEN bytes.
- * @param[out] len  Receives the size of the record in bytes.
- * @param[out] id   Receives the record ID. Can be NULL.
- * @param[out] sent Receives the sent flag. Can be NULL.
+ * @param[in]  back  0 is the newest record. 1 is the record before it, and so on.
+ * @param[out] rec   Receives the record. Must hold RECORD_MAX_LEN bytes.
+ * @param[out] len   Receives the size of the record in bytes.
+ * @param[out] id    Receives the record ID. Can be NULL.
+ * @param[out] sent  Receives the sent flag. Can be NULL.
  *
  * @retval 0 on success
  * @retval -ENOENT @p back is not less than record_count()
@@ -79,23 +85,41 @@ int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id);
  */
 int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bool *sent);
 
-/** @return Number of records in the log. The maximum is CONFIG_HS_RECORD_STORE_SLOTS. */
+/**
+ * @brief Counts the records in the log.
+ *
+ * @return Number of records in the log. The maximum is CONFIG_HS_RECORD_STORE_SLOTS.
+ */
 uint16_t record_count(void);
 
-/** @return Number of records in the log that are not marked sent. */
+/**
+ * @brief Counts the records in the log that are not marked sent.
+ *
+ * @return Number of records in the log that are not marked sent.
+ */
 uint16_t record_unsent(void);
 
 /**
- * @return Number of unsent records that a new record replaced. The value is saved across
- *         resets. record_clear() sets it to 0.
+ * @brief Counts the unsent records that a new record replaced.
+ *
+ * The value is saved across resets. record_clear() sets it to 0.
+ *
+ * @return Number of unsent records that a new record replaced.
  */
 uint32_t record_lost(void);
 
-/** @return Boot counter. record_init() adds 1 to it at each start. Use it as the session ID. */
+/**
+ * @brief Gives the boot counter.
+ *
+ * record_init() adds 1 to the boot counter at each start. Use it as the session ID.
+ *
+ * @return Boot counter.
+ */
 uint16_t record_session_id(void);
 
 /**
- * Deletes all records and sets the lost counter to 0.
+ * @brief Deletes all records and sets the lost counter to 0.
+ *
  * The record ID counter and the boot counter do not change.
  *
  * @retval 0 on success
@@ -104,8 +128,11 @@ uint16_t record_session_id(void);
 int record_clear(void);
 
 /**
- * Test function. Set @p on to true to make record_put() fail with -EIO.
- * Set @p on to false to go back to normal.
+ * @brief Turns the test fault on or off. This is a test function.
+ *
+ * While the fault is on, record_put() fails with -EIO.
+ *
+ * @param[in] on  true to turn the fault on, and false to go back to normal.
  */
 void record_inject_fault(bool on);
 

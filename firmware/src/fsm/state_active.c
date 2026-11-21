@@ -9,20 +9,10 @@
 #include <zephyr/sys/util.h>
 
 /**
- * @brief Coordinates the parallel regions of the active state.
+ * @brief Sets the battery LED request from the battery level.
  *
- * Active consists of two parallel regions: measurement and BLE. Each region
- * maintains its own private state enum and transition table in a separate file.
- * The battery has no region: safety.c reads it, this file shows the LOW beat and the
- * state machine maps a critical level to SHUTDOWN.
- *
- * This module owns no transition table or substates. It initializes
- * the regions, dispatches events to them, and leaves top-level exit
- * transitions (SLEEP_PREP and SHUTDOWN) to the state machine.
- */
-
-/**
- *
+ * When the level is LOW, the function requests a yellow BEAT pattern with a 5 s period. For any
+ * other level, the function clears the request.
  */
 static void battery_led(void)
 {

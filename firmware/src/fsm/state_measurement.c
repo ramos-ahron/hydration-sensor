@@ -150,7 +150,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                 break;
             }
 
-            // ponytail: green until bioz_score() gives a hydration status to map to a color
             led_request(LED_PRIO_RESULT, LED_GREEN, LED_PAT_STEADY, 0, RESULT_DISPLAY_MS);
             fsm_post(STATE_EVENT_RESULT_TO_STORE);
 

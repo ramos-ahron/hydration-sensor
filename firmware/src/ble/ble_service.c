@@ -54,10 +54,6 @@ typedef enum {
     ADV_PAIRING,
 } adv_mode_e;
 
-// ponytail: written by BT callbacks and read by the FSM thread without a lock. Connection
-// objects live in a static pool, so a stale pointer still points at a bt_conn and the stack
-// rejects operations on a link that is down (bt_gatt_notify returns -ENOTCONN). A lock
-// around a bt_conn_ref() snapshot is the upgrade if more state is shared.
 static struct bt_conn *current_conn;
 static volatile adv_mode_e adv_mode;
 static volatile bool pairing_open;
@@ -380,8 +376,6 @@ static void record_sent(struct bt_conn *conn, void *user_data)
     fsm_post(STATE_EVENT_TX_DONE);
 }
 
-// ponytail: the MTU is read on every call, so an MTU change between a -ENOMEM and the resume
-// re-cuts the remaining fragments. MTU exchange happens before the peer subscribes.
 int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t sequence, size_t *frag)
 {
     struct bt_conn *conn = current_conn;

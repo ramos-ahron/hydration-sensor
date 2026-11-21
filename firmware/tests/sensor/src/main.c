@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include <zephyr/ztest.h>
 
+/**
+ * @brief Removes the sensor override before each test.
+ *
+ * @param[in] f  Test fixture. The function does not use this value.
+ */
 static void before(void *f)
 {
     ARG_UNUSED(f);
