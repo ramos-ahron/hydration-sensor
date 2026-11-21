@@ -58,12 +58,4 @@ typedef enum {
     STATE_EVENT_NONE,
 } state_event_e;
 
-/**
- * @brief Defines the temporary delay for stubbed state transitions.
- *
- * Used to simulate timed transitions until the actual state logic
- * is implemented.
- */
-#define FSM_STUB_DWELL_MS 5000
-
 #endif  // STATE_COMMON_H

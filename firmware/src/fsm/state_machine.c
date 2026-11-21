@@ -26,9 +26,6 @@ LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
  */
 K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 16, 4);
 
-/** Delay before a stub event that hit a full queue is posted again. */
-#define STUB_QUEUE_RETRY_MS 50
-
 struct state_transition {
     state_e from;
     state_event_e event;
@@ -94,56 +91,6 @@ void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
 
 void fsm_timer_stop(fsm_timer_e timer) { (void)k_work_cancel_delayable(&timers[timer].dwork); }
 
-// --------------------- STUBS -----------------------------------
-
-/**
- * @brief Temporary stub infrastructure for state event simulation.
- *
- * Uses a shared delayable work item to post a timed event and stores the
- * events mapped to short and long button presses.
- *
- * @note Remove these variables when the fsm_stub() calls are replaced
- *       with real state logic.
- */
-static struct k_work_delayable stub_work;
-static state_event_e stub_timed = STATE_EVENT_NONE;
-static state_event_e stub_short = STATE_EVENT_NONE;
-static state_event_e stub_long = STATE_EVENT_NONE;
-
-/**
- * @brief Post the timed stub event when the stub timer expires.
- *
- * The function posts the timed event to the FSM message queue and does not block. If the queue is
- * full, the function logs a warning and tries again after STUB_QUEUE_RETRY_MS. The retry prevents
- * a stall of the state machine while it waits for the event.
- *
- * @param[in] work  Work item. The function does not use this value.
- */
-static void stub_work_handler(struct k_work *work)
-{
-    ARG_UNUSED(work);
-    state_event_e event = stub_timed;
-    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
-        LOG_WRN("FSM queue full, retrying %s", state_event_to_string(event));
-        (void)k_work_reschedule(&stub_work, K_MSEC(STUB_QUEUE_RETRY_MS));
-    }
-}
-
-void fsm_stub(state_event_e timed_ev, state_event_e short_ev, state_event_e long_ev)
-{
-    static struct k_work_sync sync;
-
-    (void)k_work_cancel_delayable_sync(&stub_work, &sync);
-    stub_timed = timed_ev;
-    stub_short = short_ev;
-    stub_long = long_ev;
-    if (timed_ev != STATE_EVENT_NONE) {
-        (void)k_work_schedule(&stub_work, K_MSEC(FSM_STUB_DWELL_MS));
-    }
-}
-
-// --------------------- STUBS -----------------------------------
-
 /**
  * @brief Make a top-level state transition.
  *
@@ -162,7 +109,6 @@ static void state_enter(state_e from, state_event_e event, state_e to)
     state = to;
 
     // Clear timers and configurations
-    fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
         fsm_timer_stop(i);
     }
@@ -197,7 +143,6 @@ static void state_enter(state_e from, state_event_e event, state_e to)
 
 void state_machine_init(void)
 {
-    k_work_init_delayable(&stub_work, stub_work_handler);
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
         k_work_init_delayable(&timers[i].dwork, timer_handler);
     }
@@ -208,14 +153,6 @@ void state_machine_init(void)
 
 void state_machine_process_event(state_event_e event)
 {
-    if (event == STATE_EVENT_BUTTON_SHORT && stub_short != STATE_EVENT_NONE) {
-        event = stub_short;
-        fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-    } else if (event == STATE_EVENT_BUTTON_LONG && stub_long != STATE_EVENT_NONE) {
-        event = stub_long;
-        fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-    }
-
     if (event == STATE_EVENT_BATTERY_CHANGED) {
         if ((state == STATE_INIT || state == STATE_ACTIVE || state == STATE_SLEEP) &&
             battery_level() == BATTERY_LEVEL_CRITICAL) {

@@ -121,7 +121,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             led_clear(LED_PRIO_RESULT);
             led_request(LED_PRIO_MEASURE, LED_MAGENTA, LED_PAT_SLOW, 0, 0);
 
-            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
             pipeline_measure();
 
             break;
@@ -131,7 +130,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
 
             led_request(LED_PRIO_MEASURE, LED_MAGENTA, LED_PAT_FAST, 0, 0);
 
-            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
             pipeline_process();
 
             break;
@@ -143,9 +141,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             led_clear(LED_PRIO_MEASURE);
             led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_SLOW, 0, 0);
 
-            // Transition table handles ack
-            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
-
             break;
 
         case MEASUREMENT_STATE_RESULT_READY: {
@@ -154,7 +149,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             led_clear(LED_PRIO_MEASURE);
 
             if (pipeline_result()->reject != REJECT_NONE) {
-                fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
                 fsm_post(STATE_EVENT_RESULT_REJECTED);
                 break;
             }
@@ -187,8 +181,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             __ASSERT(from == MEASUREMENT_STATE_STORE_LOCAL, "STORAGE_ERROR entered from %d", from);
 
             led_request(LED_PRIO_STORAGE, LED_YELLOW, LED_PAT_SLOW, 0, 0);
-
-            fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
 
             break;
     }
