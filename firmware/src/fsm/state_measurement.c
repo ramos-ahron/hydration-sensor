@@ -31,9 +31,7 @@ static const struct measurement_transition measurement_transitions[] = {
     { MEASUREMENT_STATE_SENSOR_ERROR, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_REJECTED, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_TO_STORE, MEASUREMENT_STATE_STORE_LOCAL },
-    { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_CONTINUOUS,
-      MEASUREMENT_STATE_MEASURING },
-    { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE_OTHER, MEASUREMENT_STATE_M_IDLE },
+    { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_WRITE_ERROR, MEASUREMENT_STATE_STORAGE_ERROR },
     { MEASUREMENT_STATE_STORAGE_ERROR, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_M_IDLE },
 };
@@ -114,8 +112,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             break;
 
         case MEASUREMENT_STATE_MEASURING:
-            __ASSERT(from == MEASUREMENT_STATE_M_IDLE || from == MEASUREMENT_STATE_MEASURING ||
-                         from == MEASUREMENT_STATE_STORE_LOCAL,
+            __ASSERT(from == MEASUREMENT_STATE_M_IDLE || from == MEASUREMENT_STATE_MEASURING,
                      "MEASURING entered from %d", from);
 
             led_clear(LED_PRIO_RESULT);
@@ -160,7 +157,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             break;
         }
 
-        case MEASUREMENT_STATE_STORE_LOCAL: {
+        case MEASUREMENT_STATE_STORE_LOCAL:
             __ASSERT(from == MEASUREMENT_STATE_RESULT_READY, "STORE_LOCAL entered from %d", from);
 
             // Every result is stored before it is sent. The BLE region sends unsent records.
@@ -169,13 +166,10 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                 break;
             }
 
-            fsm_post(IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)
-                         ? STATE_EVENT_STORE_DONE_CONTINUOUS
-                         : STATE_EVENT_STORE_DONE_OTHER);
+            fsm_post(STATE_EVENT_STORE_DONE);
             fsm_post(STATE_EVENT_TX_KICK);
 
             break;
-        }
 
         case MEASUREMENT_STATE_STORAGE_ERROR:
             __ASSERT(from == MEASUREMENT_STATE_STORE_LOCAL, "STORAGE_ERROR entered from %d", from);
