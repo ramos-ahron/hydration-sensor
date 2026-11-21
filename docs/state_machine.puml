@@ -38,14 +38,15 @@ endlegend
 
 state INIT : LED: white STEADY (boot)
 state INIT_FAULT : LED: red FAST
-state SHUTDOWN : LED: off\nRed FAST for 2 s on button press
-state SLEEP_PREP : LED: off
+state SHUTDOWN : LED: off\nRed FAST for 2 s on button press\nStops the pipeline (drive off), then the radio
+state SLEEP_PREP : LED: off\nStops the pipeline (drive off), then the radio
 state SLEEP : LED: white BEAT every ~4 s\nPeriodic wake: battery check
 
 INIT --> INIT : watchdog reset
 INIT --> INIT_FAULT : Init Fail
 INIT_FAULT --> INIT : Button 1: Short Press
 INIT --> Active : Init OK
+INIT --> SHUTDOWN : BATTERY_CRITICAL
 
 state Active {
 
@@ -55,13 +56,12 @@ state Active {
     state PROCESSING : LED: magenta FAST
     state SENSOR_ERROR : LED: red SLOW
     state RESULT_READY : LED: hydration result (as M_IDLE)
-    state TRANSMIT : LED: none (keeps result color)
-    state STORE_LOCAL : LED: none (keeps result color)
+    state STORE_LOCAL : LED: none (keeps result color)\nStores the record as unsent, kicks the BLE sender
     state STORAGE_ERROR : LED: yellow SLOW
 
     [*] --> M_IDLE
 
-    M_IDLE --> MEASURING : Mode = Continuous (auto)
+    M_IDLE --> MEASURING : Mode = Continuous\n[interval elapsed]
     M_IDLE --> MEASURING : Mode = Timer\n[timer trigger]
     M_IDLE --> MEASURING : Mode = Manual\n[Button 1: Short Press]
 
@@ -75,14 +75,9 @@ state Active {
     SENSOR_ERROR --> M_IDLE : Button 1: Short Press\n(ack / clear fault)
 
     RESULT_READY --> M_IDLE : reject_flag = true\n(discard measurement)
-    RESULT_READY --> TRANSMIT : reject_flag = false\n[BLE.state = CONNECTED]
-    RESULT_READY --> STORE_LOCAL : reject_flag = false\n[BLE.state != CONNECTED]
+    RESULT_READY --> STORE_LOCAL : reject_flag = false\n(store before send)
 
-    TRANSMIT --> TRANSMIT : retry [n < MAX_RETRY]
-    TRANSMIT --> STORE_LOCAL : done or retries exhausted\n(always store a local copy)
-
-    STORE_LOCAL --> MEASURING : Mode = Continuous
-    STORE_LOCAL --> M_IDLE : Mode != Continuous
+    STORE_LOCAL --> M_IDLE : Stored
     STORE_LOCAL --> STORAGE_ERROR : Write error /\nstorage full
 
     STORAGE_ERROR --> M_IDLE : Button 1: Short Press (ack)
@@ -92,42 +87,26 @@ state Active {
 
   state BLE {
     state BLE_IDLE : LED: none
-    state PAIRING : LED: blue FAST
-    state CONNECTED : LED: blue TRIPLE on entry, then none
+    state PAIRING : LED: blue SLOW
+    state CONNECTED : LED: blue TRIPLE on entry, then none\nSends unsent records, oldest first
     state DISCONNECTED : LED: none (transient)
 
     [*] --> BLE_IDLE
 
-    BLE_IDLE --> PAIRING : Button 1: Long Press\n[M_STATE not in\nProcessing/Measuring/Transmitting]
+    BLE_IDLE --> PAIRING : Button 1: Long Press\n[M_STATE not in\nMeasuring/Processing]
     PAIRING --> BLE_IDLE : Button 1: Short Press /\ntimeout
     PAIRING --> CONNECTED : Connection complete
-    CONNECTED --> BLE_IDLE : Button 1: Long Press\n(force disconnect + re-advertise)\n[M_STATE not in\nProcessing/Measuring/Transmitting]
+    CONNECTED --> BLE_IDLE : Button 1: Long Press\n(force disconnect + re-advertise)\n[M_STATE not in\nMeasuring/Processing]
     CONNECTED --> DISCONNECTED : Link lost /\npeer disconnect request
     DISCONNECTED --> BLE_IDLE : re-advertise
-  }
-
-  --
-
-  state "Battery Monitor" as Battery {
-    state BATTERY_OK : LED: none
-    state BATTERY_LOW : LED: yellow BEAT every 5 s
-    state BATTERY_CRITICAL : Trigger shutdown
-    state BatteryInit <<choice>>
-
-    [*] --> BatteryInit
-    BatteryInit --> BATTERY_OK : Voltage above threshold
-    BatteryInit --> BATTERY_LOW : Voltage below threshold
-
-    BATTERY_OK --> BATTERY_LOW : Voltage below threshold
-    BATTERY_LOW --> BATTERY_OK : Voltage recovered
-    BATTERY_LOW --> BATTERY_CRITICAL : Voltage below\ncritical threshold
-    BATTERY_CRITICAL --> BATTERY_LOW : Voltage above\ncritical threshold
   }
 }
 
 note right of Active
-  Measurement, BLE and Battery Monitor
-  run in parallel.
+  Measurement and BLE run in parallel.
+  The battery has no region: a periodic check runs
+  in every state. LOW shows yellow BEAT every 5 s.
+  CRITICAL moves INIT, Active or SLEEP to SHUTDOWN.
   All short button presses assume BLE != PAIRING.
   Data path: sensor -> watch -> phone
   (sensor transmits to watch, watch sends data to phone).
