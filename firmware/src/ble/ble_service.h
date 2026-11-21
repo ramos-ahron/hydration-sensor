@@ -75,7 +75,7 @@ bool ble_has_bond(void);
  *
  * The function cuts the packet into fragments that fit the current ATT MTU.
  * It queues the fragments, starting at fragment @p *frag. When the stack
- * reports the last fragment as sent, the module posts TRANSMIT_DONE. When the link goes down
+ * reports the last fragment as sent, the module posts TX_DONE. When the link goes down
  * first, the module posts nothing. At the default ATT MTU of 23 bytes, a PACKET_SIZE packet is
  * one fragment.
  *

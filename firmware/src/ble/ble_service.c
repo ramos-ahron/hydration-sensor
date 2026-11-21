@@ -366,7 +366,7 @@ bool ble_subscribed(void) { return subscribed(current_conn); }
 bool ble_has_bond(void) { return bond_count() > 0; }
 
 /**
- * @brief Post TRANSMIT_DONE when the stack sent the last fragment of a packet.
+ * @brief Post TX_DONE when the stack sent the last fragment of a packet.
  *
  * The BT host calls this function. It only posts the event.
  *
@@ -377,7 +377,7 @@ static void record_sent(struct bt_conn *conn, void *user_data)
 {
     ARG_UNUSED(conn);
     ARG_UNUSED(user_data);
-    fsm_post(STATE_EVENT_TRANSMIT_DONE);
+    fsm_post(STATE_EVENT_TX_DONE);
 }
 
 // ponytail: the MTU is read on every call, so an MTU change between a -ENOMEM and the resume

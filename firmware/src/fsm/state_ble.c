@@ -140,7 +140,7 @@ static void send_frags(void)
  *
  * Only one record is in flight at a time. When the log has no unsent record, or the record does
  * not parse, the function clears sync_sending and sends nothing. The record stays unsent in the
- * log until the TRANSMIT_DONE handler marks it sent. Thus if the link goes down, the record is
+ * log until the TX_DONE handler marks it sent. Thus if the link goes down, the record is
  * sent again after the next connection.
  */
 static void send_next_unsent(void)
