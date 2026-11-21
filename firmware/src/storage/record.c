@@ -315,6 +315,8 @@ int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bo
     return rc;
 }
 
+uint16_t record_next_id(void) { return m.next_id; }
+
 uint16_t record_count(void) { return m.count; }
 
 uint16_t record_unsent(void)

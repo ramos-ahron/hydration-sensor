@@ -67,6 +67,18 @@ ZTEST(record, test_unsent_order)
     (void)b;
 }
 
+ZTEST(record, test_next_id)
+{
+    const uint16_t next = record_next_id();
+
+    zassert_equal(put_n(1, false), next);
+    zassert_equal(record_next_id(), (uint16_t)(next + 1));
+
+    record_inject_fault(true);
+    zassert_equal(record_put((const uint8_t[]){ 1 }, 1, false, NULL), -EIO);
+    zassert_equal(record_next_id(), (uint16_t)(next + 1));
+}
+
 ZTEST(record, test_bad_len)
 {
     uint8_t r[RECORD_MAX_LEN + 1] = { 0 };

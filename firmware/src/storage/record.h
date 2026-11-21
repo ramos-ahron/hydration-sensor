@@ -35,6 +35,12 @@ int record_init(void);
 int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id);
 
 /**
+ * @return ID that the next successful record_put() returns. Use it to put the ID in the record
+ *         before it is stored. Only one thread may call record_put().
+ */
+uint16_t record_next_id(void);
+
+/**
  * Sets the sent flag on a record.
  *
  * @param id ID that record_put() returned.
