@@ -245,11 +245,4 @@ static int led_init(void)
     return 0;
 }
 SYS_INIT(led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
-
-void led_set(led_color_e color)
-{
-    for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
-        (void)gpio_pin_set_dt(&leds[i], (color >> i) & 1);
-    }
-}
 #endif

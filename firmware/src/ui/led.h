@@ -43,13 +43,6 @@ typedef enum {
 } led_prio_e;
 
 /**
- * @brief Set the LED to a color.
- *
- * @param[in] color  Color to show.
- */
-void led_set(led_color_e color);
-
-/**
  * @brief Set the LED request for one priority.
  *
  * The new request replaces any request that is already in the slot for @p prio. The pattern

@@ -11,8 +11,6 @@ void state_sleep_run(state_e from)
     __ASSERT(from == STATE_SLEEP_PREP, "SLEEP entered from %d", from);
     ARG_UNUSED(from);
 
-    led_set(LED_WHITE);
-
     /**
      * System ON idle: main loop blocks and kernel idles
      * short: wakes to INIT. Battery check handles shutdown

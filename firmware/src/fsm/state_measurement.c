@@ -61,17 +61,18 @@ static int store_result(void)
  * @brief Enter a measurement substate.
  *
  * The function first stores @p to as the current state. Then it asserts that the transition is
- * legal. Then it sets the LED and prepares for the new state:
- * - M_IDLE: LED off.
- * - MEASURING: LED magenta. The function calls pipeline_measure().
- * - PROCESSING: LED magenta. The function calls pipeline_process().
- * - SENSOR_ERROR: LED red. The transition table handles the acknowledgement.
+ * legal. Then it sets the LED requests and prepares for the new state:
+ * - M_IDLE: Clears the measurement, fault and storage requests. A result request stays until its
+ *   RESULT_DISPLAY_MS ends.
+ * - MEASURING: Clears the result request. Magenta SLOW. The function calls pipeline_measure().
+ * - PROCESSING: Magenta FAST. The function calls pipeline_process().
+ * - SENSOR_ERROR: Red SLOW. The transition table handles the acknowledgement.
  * - RESULT_READY: The function posts RESULT_REJECTED when the pipeline result has a reject
- *   reason. Otherwise it sets the LED green and posts RESULT_TO_STORE.
+ *   reason. Otherwise it shows green STEADY for RESULT_DISPLAY_MS and posts RESULT_TO_STORE.
  * - STORE_LOCAL: The LED does not change. The function stores the result as unsent and posts
  *   TX_KICK, so the BLE region sends it when a phone is connected. A failed write posts
  *   WRITE_ERROR.
- * - STORAGE_ERROR: LED yellow.
+ * - STORAGE_ERROR: Yellow SLOW.
  *
  * @param[in] from  State that the machine leaves.
  * @param[in] to    State that the machine enters.
@@ -89,8 +90,9 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                          from == MEASUREMENT_STATE_STORAGE_ERROR,
                      "M_IDLE entered from %d", from);
 
-            // Change when we are able to get hydration status
-            led_set(LED_OFF);
+            led_clear(LED_PRIO_MEASURE);
+            led_clear(LED_PRIO_FAULT);
+            led_clear(LED_PRIO_STORAGE);
 
             // Transitions
             if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_TIMER)) {
@@ -116,7 +118,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                          from == MEASUREMENT_STATE_STORE_LOCAL,
                      "MEASURING entered from %d", from);
 
-            led_set(LED_MAGENTA);
+            led_clear(LED_PRIO_RESULT);
+            led_request(LED_PRIO_MEASURE, LED_MAGENTA, LED_PAT_SLOW, 0, 0);
 
             fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
             pipeline_measure();
@@ -126,7 +129,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
         case MEASUREMENT_STATE_PROCESSING:
             __ASSERT(from == MEASUREMENT_STATE_MEASURING, "PROCESSING entered from %d", from);
 
-            led_set(LED_MAGENTA);
+            led_request(LED_PRIO_MEASURE, LED_MAGENTA, LED_PAT_FAST, 0, 0);
 
             fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
             pipeline_process();
@@ -137,7 +140,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             __ASSERT(from == MEASUREMENT_STATE_MEASURING || from == MEASUREMENT_STATE_PROCESSING,
                      "SENSOR_ERROR entered from %d", from);
 
-            led_set(LED_RED);
+            led_clear(LED_PRIO_MEASURE);
+            led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_SLOW, 0, 0);
 
             // Transition table handles ack
             fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
@@ -147,13 +151,16 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
         case MEASUREMENT_STATE_RESULT_READY: {
             __ASSERT(from == MEASUREMENT_STATE_PROCESSING, "RESULT_READY entered from %d", from);
 
+            led_clear(LED_PRIO_MEASURE);
+
             if (pipeline_result()->reject != REJECT_NONE) {
                 fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
                 fsm_post(STATE_EVENT_RESULT_REJECTED);
                 break;
             }
 
-            led_set(LED_GREEN);
+            // ponytail: green until bioz_score() gives a hydration status to map to a color
+            led_request(LED_PRIO_RESULT, LED_GREEN, LED_PAT_STEADY, 0, RESULT_DISPLAY_MS);
             fsm_post(STATE_EVENT_RESULT_TO_STORE);
 
             break;
@@ -179,7 +186,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
         case MEASUREMENT_STATE_STORAGE_ERROR:
             __ASSERT(from == MEASUREMENT_STATE_STORE_LOCAL, "STORAGE_ERROR entered from %d", from);
 
-            led_set(LED_YELLOW);
+            led_request(LED_PRIO_STORAGE, LED_YELLOW, LED_PAT_SLOW, 0, 0);
 
             fsm_stub(STATE_EVENT_NONE, STATE_EVENT_NONE, STATE_EVENT_NONE);
 
