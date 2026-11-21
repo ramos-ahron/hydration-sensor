@@ -47,9 +47,13 @@ static int store_result(void)
 {
     struct packet pkt;
     uint8_t buf[PACKET_SIZE];
+    const struct result *r = pipeline_result();
 
     packet_init(&pkt, record_session_id(), (uint32_t)(k_uptime_get() / MSEC_PER_SEC),
                 record_next_id());
+    pkt.temp_centi_c = r->temp_centi_c;
+    pkt.a_rms_mm_s2 = r->a_rms_mm_s2;
+    pkt.battery_mv = r->battery_mv;
     const size_t len = packet_serialize(&pkt, buf);
 
     return record_put(buf, len, false, NULL);

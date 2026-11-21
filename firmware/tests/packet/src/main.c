@@ -10,14 +10,21 @@ ZTEST_SUITE(packet, NULL, NULL, NULL, NULL, NULL);
 /**
  * @brief Fills a packet with fixed test values.
  *
- * @param[out] pkt  Receives the packet. The session ID is 0x0506, the timestamp is 0x090A0B0C, and
- *                  the sequence is 0x0708.
+ * @param[out] pkt  Receives the packet. The session ID is 0x0506, the timestamp is 0x090A0B0C,
+ *                  the sequence is 0x0708, the temperature is -1234, a_rms is INT16_MIN, and the
+ *                  battery voltage is 3000.
  */
-static void mk_pkt(struct packet *pkt) { packet_init(pkt, 0x0506, 0x090A0B0C, 0x0708); }
+static void mk_pkt(struct packet *pkt)
+{
+    packet_init(pkt, 0x0506, 0x090A0B0C, 0x0708);
+    pkt->temp_centi_c = -1234;
+    pkt->a_rms_mm_s2 = INT16_MIN;
+    pkt->battery_mv = 3000;
+}
 
 ZTEST(packet, test_size_and_crc_algo)
 {
-    zassert_equal(PACKET_SIZE, 11);
+    zassert_equal(PACKET_SIZE, 17);
     // Standard check value for CRC-16/CCITT-FALSE.
     zassert_equal(crc16_itu_t(PACKET_CRC_INIT, (const uint8_t *)"123456789", 9), 0x29B1);
 }
@@ -31,6 +38,9 @@ ZTEST(packet, test_init)
     zassert_equal(a.session_id, 0x0506);
     zassert_equal(a.timestamp_s, 0x090A0B0C);
     zassert_equal(a.sequence, 0x0708);
+    zassert_equal(a.temp_centi_c, -1234);
+    zassert_equal(a.a_rms_mm_s2, INT16_MIN);
+    zassert_equal(a.battery_mv, 3000);
     zassert_equal(a.record_crc16, 0);
 }
 
@@ -52,17 +62,21 @@ ZTEST(packet, test_round_trip)
 ZTEST(packet, test_golden_offsets)
 {
     const struct packet pkt = {
-        .version = 1,
+        .version = 2,
         .session_id = 0x0708,
         .timestamp_s = 0x090A0B0C,
         .sequence = 0x0D0E,
+        .temp_centi_c = 0x1112,
+        .a_rms_mm_s2 = 0x1314,
+        .battery_mv = 0x1516,
     };
-    const uint8_t want[PACKET_SIZE - 2] = { 0x01, 0x08, 0x07, 0x0C, 0x0B, 0x0A, 0x09, 0x0E, 0x0D };
+    const uint8_t want[PACKET_SIZE - 2] = { 0x02, 0x08, 0x07, 0x0C, 0x0B, 0x0A, 0x09, 0x0E,
+                                            0x0D, 0x12, 0x11, 0x14, 0x13, 0x16, 0x15 };
     uint8_t b[PACKET_SIZE];
 
     packet_serialize(&pkt, b);
     zassert_mem_equal(b, want, sizeof(want));
-    zassert_equal(sys_get_le16(&b[9]), crc16_itu_t(PACKET_CRC_INIT, b, 9));
+    zassert_equal(sys_get_le16(&b[15]), crc16_itu_t(PACKET_CRC_INIT, b, 15));
 }
 
 ZTEST(packet, test_parse_rejects)
@@ -118,20 +132,21 @@ ZTEST(packet, test_fragments)
     mk_pkt(&a);
     packet_serialize(&a, pkt);
 
-    // Default ATT MTU: the whole packet fits in one notification.
-    zassert_equal(packet_frag_count(PACKET_SIZE, 20), 1);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 0, 20, f), 17);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 1, 20, f), 0);
+    // Default ATT MTU: 2 fragments of 14 and 3 packet bytes.
+    zassert_equal(packet_frag_count(PACKET_SIZE, 20), 2);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 0, 20, f), 20);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 1, 20, f), 9);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 2, 20, f), 0);
     zassert_equal(reassemble(pkt, PACKET_SIZE, 20, out), PACKET_SIZE);
     zassert_mem_equal(out, pkt, PACKET_SIZE);
 
-    // 4 packet bytes per fragment: 3 fragments of 4, 4 and 3 bytes.
-    zassert_equal(packet_frag_count(PACKET_SIZE, 10), 3);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 0, 10, f), 10);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 1, 10, f), 10);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 2, 10, f), 9);
-    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 3, 10, f), 0);
-    zassert_equal(reassemble(pkt, PACKET_SIZE, 10, out), PACKET_SIZE);
+    // 6 packet bytes per fragment: 3 fragments of 6, 6 and 5 bytes.
+    zassert_equal(packet_frag_count(PACKET_SIZE, 12), 3);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 0, 12, f), 12);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 1, 12, f), 12);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 2, 12, f), 11);
+    zassert_equal(packet_frag_build(pkt, PACKET_SIZE, 1, 2, 3, 12, f), 0);
+    zassert_equal(reassemble(pkt, PACKET_SIZE, 12, out), PACKET_SIZE);
     zassert_mem_equal(out, pkt, PACKET_SIZE);
 
     zassert_equal(packet_frag_count(PACKET_SIZE, PACKET_FRAG_HDR_LEN), 0);

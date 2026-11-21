@@ -5,7 +5,7 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT(PACKET_SIZE == 11, "BLE packet version 1 is 11 bytes");
+BUILD_ASSERT(PACKET_SIZE == 17, "BLE packet version 2 is 17 bytes");
 
 /* Byte offset of the CRC. It is the last field, so the CRC covers bytes 0 to PACKET_CRC_OFF - 1. */
 #define PACKET_CRC_OFF (PACKET_SIZE - PACKET_WIRE_SIZE_u16)
@@ -13,10 +13,12 @@ BUILD_ASSERT(PACKET_SIZE == 11, "BLE packet version 1 is 11 bytes");
 /* Write and read one field. The ##type in each X picks the macro by wire type. */
 #define PUT_u8(p, v)  (*(p) = (v))
 #define PUT_u16(p, v) sys_put_le16((v), (p))
+#define PUT_i16(p, v) sys_put_le16((uint16_t)(v), (p))
 #define PUT_u32(p, v) sys_put_le32((v), (p))
 
 #define GET_u8(p)  (*(p))
 #define GET_u16(p) sys_get_le16(p)
+#define GET_i16(p) ((int16_t)sys_get_le16(p))
 #define GET_u32(p) sys_get_le32(p)
 
 /*

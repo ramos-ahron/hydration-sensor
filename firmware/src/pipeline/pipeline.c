@@ -3,6 +3,7 @@
 #include "hs/bioz.h"
 #include "safety/safety.h"
 #include "sensors/afe.h"
+#include "sensors/sensor.h"
 #include <errno.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -40,7 +41,8 @@ static bool failed(int err, const char *name)
  *
  * The function clears the result. If safety_check() fails, it sets REJECT_CHARGING and posts
  * ACQUIRED_SAMPLES. Otherwise it runs afe_measure() with the drive on. A failed measurement stops
- * the AFE, sets REJECT_AFE, and posts SENSOR_FAULT. A good measurement posts ACQUIRED_SAMPLES.
+ * the AFE, sets REJECT_AFE, and posts SENSOR_FAULT. A good measurement reads the temperature,
+ * the motion and the battery voltage into the result, then posts ACQUIRED_SAMPLES.
  *
  * @param[in] work  Work item that ran. The function does not use this value.
  */
@@ -65,6 +67,15 @@ static void measure_handler(struct k_work *work)
         fsm_post(STATE_EVENT_SENSOR_FAULT);
         return;
     }
+
+    // get_temp() sets INT16_MIN on failure. get_motion() blocks for the motion window.
+    float rms;
+    const int mv = battery_mv();
+
+    (void)get_temp(&result.temp_centi_c);
+    result.a_rms_mm_s2 =
+        get_motion(&rms) == 0 ? (int16_t)MIN(rms * 1000.0f + 0.5f, INT16_MAX) : INT16_MIN;
+    result.battery_mv = mv < 0 ? INT16_MIN : (int16_t)MIN(mv, INT16_MAX);
     fsm_post(STATE_EVENT_ACQUIRED_SAMPLES);
 }
 

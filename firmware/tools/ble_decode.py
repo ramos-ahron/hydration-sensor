@@ -1,10 +1,10 @@
-"""Connect to the hydration sensor over BLE and decode its records (packet v1).
+"""Connect to the hydration sensor over BLE and decode its records (packet v2).
 
 Usage:
 
     python ble_decode.py              # print records until Ctrl-C
     python ble_decode.py --count 20   # stop and disconnect after 20 records
-    python ble_decode.py --hex <hex>  # decode one 11-byte record from the device shell, no radio
+    python ble_decode.py --hex <hex>  # decode one 17-byte record from the device shell, no radio
     python ble_decode.py --selftest   # check parser, decoder and reassembly, no radio
 
 Live mode needs bleak, declared in pyproject.toml: run `uv run ble_decode.py` from this folder.
@@ -14,7 +14,7 @@ Where the layout comes from:
 
     The field table and version come from src/ble/packet.h (the X() rows of PACKET_FIELDS and
     PACKET_VERSION). Flag bits, reject names and status names come from src/hs/hs_types.h when
-    that file exists. Packet v1 has no flags or status field, so the file is optional. This
+    that file exists. Packet v2 has no flags or status field, so the file is optional. This
     script has no field list of its own. The drawings below help the reader, but the header is
     the source of truth.
 
@@ -28,13 +28,19 @@ One fragment = one BLE notification (little-endian):
 
     The receiver joins the fragments with the same (session_id, sequence) in index order.
 
-One record, packet v1, 11 bytes (little-endian):
+One record, packet v2, 17 bytes (little-endian):
 
-    byte   0      1      2      3      4      5      6      7      8      9      10
-         +------+------+------+------+------+------+------+------+------+------+------+
-         | ver  |  session_id |        timestamp_s        |  sequence   | record_crc16|
-         +------+------+------+------+------+------+------+------+------+------+------+
-          u8     u16           u32                         u16           u16
+    byte   0      1      2      3      4      5      6      7      8
+         +------+------+------+------+------+------+------+------+------+
+         | ver  |  session_id |        timestamp_s        |  sequence   |
+         +------+------+------+------+------+------+------+------+------+
+          u8     u16           u32                         u16
+
+    byte   9      10     11     12     13     14     15     16
+         +------+------+------+------+------+------+------+------+
+         | temp_centi_c| a_rms_mm_s2 | battery_mv  | record_crc16|
+         +------+------+------+------+------+------+------+------+
+          i16           i16           i16           u16
 
     record_crc16 is CRC-16/CCITT-FALSE (seed 0xFFFF) over every byte before it.
 """
@@ -554,10 +560,10 @@ async def run(name, count):
     if count and received < count:
         sys.exit(1)
 
-# Bytes 0-8 are copied from test_golden_offsets in firmware/tests/packet/src/main.c. The CRC
-# (bytes 9-10, 0x174b LSB first) is CRC-16/CCITT-FALSE of those bytes, computed once by a separate
+# Bytes 0-14 are copied from test_golden_offsets in firmware/tests/packet/src/main.c. The CRC
+# (bytes 15-16, 0xd39c LSB first) is CRC-16/CCITT-FALSE of those bytes, computed once by a separate
 # bitwise implementation, not by this script.
-GOLDEN = "0108070c0b0a090e0d4b17"
+GOLDEN = "0208070c0b0a090e0d1211141316159cd3"
 
 
 def raises_value_error(fn, *args):
@@ -615,21 +621,22 @@ def sample_value(index, field):
 
 
 def test_table_shape(version, fields):
-    """Check that the header gives packet v1.
+    """Check that the header gives packet v2.
 
-    Packet v1 has 5 fields in a known order, 11 bytes and only known wire types.
+    Packet v2 has 8 fields in a known order, 17 bytes and only known wire types.
 
     Args:
         version (int): Version from load_table().
         fields (list[Field]): Fields from load_table().
 
     Raises:
-        AssertionError: The header does not match packet v1.
+        AssertionError: The header does not match packet v2.
     """
     size = struct.calcsize(record_format(fields))
     names = [field.name for field in fields]
-    assert version == 1 and len(fields) == 5 and size == 11, (version, len(fields), size)
-    assert names == ["version", "session_id", "timestamp_s", "sequence", "record_crc16"], names
+    assert version == 2 and len(fields) == 8 and size == 17, (version, len(fields), size)
+    assert names == ["version", "session_id", "timestamp_s", "sequence", "temp_centi_c",
+                     "a_rms_mm_s2", "battery_mv", "record_crc16"], names
     assert all(field.wire_type in WIRE_FORMAT for field in fields)
 
 
@@ -672,12 +679,13 @@ def test_golden(fields, names):
         AssertionError: A value or the printed line is wrong.
     """
     raw = decode(fields, bytes.fromhex(GOLDEN))
-    want = dict(version=1, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
-                record_crc16=0x174B)
+    want = dict(version=2, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
+                temp_centi_c=0x1112, a_rms_mm_s2=0x1314, battery_mv=0x1516, record_crc16=0xD39C)
     assert raw == want, raw
     line = format_record(fields, raw, names)
-    assert line == ("version=1  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
-                    "record_crc16=5963"), line
+    assert line == ("version=2  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
+                    "temp_centi_c=43.7 C  a_rms_mm_s2=4.884 m/s^2  battery_mv=5398 mV  "
+                    "record_crc16=54172"), line
 
 
 def test_bad_records(fields):
@@ -718,7 +726,7 @@ def test_row_regex():
 def test_flags(fields, names):
     """Check the flag handling.
 
-    Packet v1 has no flags or status field. A flags field shows no build tags when the names do
+    Packet v2 has no flags or status field. A flags field shows no build tags when the names do
     not define BUILD_AFE_SIM or BUILD_ORACLE. An unknown mode shows as "?<value>".
 
     Args:
@@ -749,7 +757,7 @@ def test_reassembly():
     """Check that Reassembler joins fragments and rejects bad ones.
 
     The test covers these cases:
-        - one 17-byte fragment at the default 23-byte MTU
+        - 2 fragments of 20 and 9 bytes at the default 23-byte MTU
         - 3 fragments in order, out of order, and with a repeated fragment
         - a newer record that abandons an incomplete record
         - a fragment that is too short, an index past count, and count 0
@@ -758,13 +766,14 @@ def test_reassembly():
         AssertionError: A record was joined incorrectly, or a bad fragment was accepted.
     """
     golden = bytes.fromhex(GOLDEN)
-    # Default 23-byte MTU (20-byte notifications): the record fits in one 17-byte fragment.
-    assert len(fragment(0x0708, 0x0D0E, 0, 1, golden)) == 17
-    # 10-byte notifications: 3 fragments carrying 4, 4 and 3 record bytes.
+    # Default 23-byte MTU (20-byte notifications): 2 fragments carrying 14 and 3 record bytes.
+    assert len(fragment(0x0708, 0x0D0E, 0, 2, golden[:14])) == 20
+    assert len(fragment(0x0708, 0x0D0E, 1, 2, golden[14:])) == 9
+    # 12-byte notifications: 3 fragments carrying 6, 6 and 5 record bytes.
     frags = []
     for index in range(3):
-        frags.append(fragment(0x0708, 0x0D0E, index, 3, golden[index * 4:(index + 1) * 4]))
-    assert [len(f) for f in frags] == [10, 10, 9]
+        frags.append(fragment(0x0708, 0x0D0E, index, 3, golden[index * 6:(index + 1) * 6]))
+    assert [len(f) for f in frags] == [12, 12, 11]
     for order in ((0, 1, 2), (2, 0, 1), (1, 2, 1, 0)):  # the last order repeats fragment 1
         reassembler, record = Reassembler(), None
         for index in order:

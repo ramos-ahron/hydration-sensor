@@ -63,7 +63,7 @@ bool ble_subscribed(void);
  * It queues the fragments, starting at fragment @p *frag. When the stack
  * reports the last fragment as sent, the module posts TX_DONE. When the link goes down
  * first, the module posts nothing. At the default ATT MTU of 23 bytes, a PACKET_SIZE packet is
- * one fragment.
+ * two fragments.
  *
  * On the system work queue, the stack does not wait for a free TX buffer, and the function
  * returns -ENOMEM. On other threads, such as the FSM thread, the stack waits for a free buffer.

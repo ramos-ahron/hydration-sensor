@@ -11,22 +11,29 @@
  *   ------                                                    ---------------
  *   packet_init()           fill struct packet
  *         |
- *   packet_serialize()     struct -> 11 bytes + CRC
+ *   packet_serialize()     struct -> 17 bytes + CRC
  *         |
- *   packet_frag_build()    11 bytes -> 1..n fragments  ==BLE==>  join the fragments
+ *   packet_frag_build()    17 bytes -> 1..n fragments  ==BLE==>  join the fragments
  *                                                                  |
  *                                                              packet_parse()
  *                                                              check length and CRC,
  *                                                              bytes -> struct
  *
- * Packet layout (version 1, 11 bytes, little-endian):
+ * Packet layout (version 2, 17 bytes, little-endian):
  *
- *   byte   0      1      2      3      4      5      6      7      8      9      10
- *        +------+------+------+------+------+------+------+------+------+------+------+
- *        | ver  |  session_id |        timestamp_s        |  sequence   | record_crc16|
- *        +------+------+------+------+------+------+------+------+------+------+------+
- *         u8     u16 LSB first u32 LSB first               u16           u16
- *        '------------------- CRC covers bytes 0 to 8 ------------------'
+ *   byte   0      1      2      3      4      5      6      7      8
+ *        +------+------+------+------+------+------+------+------+------+
+ *        | ver  |  session_id |        timestamp_s        |  sequence   |
+ *        +------+------+------+------+------+------+------+------+------+
+ *         u8     u16 LSB first u32 LSB first               u16
+ *
+ *   byte   9      10     11     12     13     14     15     16
+ *        +------+------+------+------+------+------+------+------+
+ *        | temp_centi_c| a_rms_mm_s2 | battery_mv  | record_crc16|
+ *        +------+------+------+------+------+------+------+------+
+ *         i16           i16           i16           u16
+ *
+ *   The CRC covers bytes 0 to 14.
  *
  *   Field          Source
  *   ------------   --------------------------------------------------------------
@@ -34,13 +41,19 @@
  *   session_id     record_session_id(). The boot counter.
  *   timestamp_s    Seconds since boot. There is no wall clock.
  *   sequence       Record ID from record_put(). It adds 1 per record and wraps at 65536.
+ *   temp_centi_c   get_temp() in 0.01 C.
+ *   a_rms_mm_s2    get_motion() in mm/s^2, limited to INT16_MAX.
+ *   battery_mv     battery_mv() in mV.
  *   record_crc16   packet_serialize() calculates it.
+ *
+ * INT16_MIN in an i16 field means that the value is not available.
  *
  * (session_id, timestamp_s) puts packets in order across boots.
  *
- * Example: version 1, session 0x0708, timestamp 0x090A0B0C, sequence 0x0D0E
+ * Example: version 2, session 0x0708, timestamp 0x090A0B0C, sequence 0x0D0E, temp 0x1112,
+ * a_rms 0x1314, battery 0x1516
  *
- *   01  08 07  0C 0B 0A 09  0E 0D  <crc LSB> <crc MSB>
+ *   02  08 07  0C 0B 0A 09  0E 0D  12 11  14 13  16 15  <crc LSB> <crc MSB>
  *
  * Fields go on the wire one at a time, in table order. The firmware never sends
  * struct packet as is, because the compiler can add padding between its members.
@@ -50,7 +63,7 @@
 #include <stdint.h>
 
 // Packet format version. Increase it each time PACKET_FIELDS changes.
-#define PACKET_VERSION 1
+#define PACKET_VERSION 2
 
 /**
  * @brief Packet field table.
@@ -60,7 +73,7 @@
  *   Column      Meaning
  *   ---------   -----------------------------------------------------------------
  *   name        Member name in struct packet.
- *   wire type   u8, u16 or u32. Sets the size in bytes and the C type.
+ *   wire type   u8, u16, i16 or u32. Sets the size in bytes and the C type.
  *   scale       Real value = raw integer * scale. A host decoder uses it.
  *   unit        Unit of the real value. A host decoder uses it.
  *
@@ -75,13 +88,18 @@
     X(session_id, u16, 1, "")                                                                      \
     X(timestamp_s, u32, 1, "s")                                                                    \
     X(sequence, u16, 1, "")                                                                        \
+    X(temp_centi_c, i16, 0.01, "C")                                                                \
+    X(a_rms_mm_s2, i16, 0.001, "m/s^2")                                                            \
+    X(battery_mv, i16, 1, "mV")                                                                    \
     X(record_crc16, u16, 1, "")
 
 #define PACKET_WIRE_SIZE_u8  1
 #define PACKET_WIRE_SIZE_u16 2
+#define PACKET_WIRE_SIZE_i16 2
 #define PACKET_WIRE_SIZE_u32 4
 #define PACKET_CTYPE_u8      uint8_t
 #define PACKET_CTYPE_u16     uint16_t
+#define PACKET_CTYPE_i16     int16_t
 #define PACKET_CTYPE_u32     uint32_t
 
 #define PACKET_FIELD_SIZE(name, type, scale, unit)   +PACKET_WIRE_SIZE_##type
@@ -97,8 +115,8 @@ struct packet {
 /**
  * @brief Fills a packet.
  *
- * The function sets version to PACKET_VERSION and record_crc16 to 0. packet_serialize()
- * calculates the CRC.
+ * The function sets version to PACKET_VERSION and the other fields to 0. packet_serialize()
+ * calculates the CRC. The caller sets the sensor fields.
  *
  * @param[out] pkt          Packet to fill.
  * @param[in]  session_id   Boot counter from record_session_id().
