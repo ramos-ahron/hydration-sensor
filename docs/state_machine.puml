@@ -1,5 +1,5 @@
 @startuml HydrationFSM
-title Device State Machine (binary RGB LED, no PWM)
+title Device State Machine
 skinparam state {
   BackgroundColor White
   BorderColor #444444
@@ -7,7 +7,7 @@ skinparam state {
 hide empty description
 
 legend right
-  **LED palette (each channel is only ON or OFF: 7 colors + off)**
+  **LED palette
   |= Color |= Meaning |
   | Red | Low hydration / fault / critical battery |
   | Yellow | Mild hydration / warning |
@@ -17,20 +17,20 @@ legend right
   | Magenta | Device is working |
   | White | Device power state (boot, sleep) |
 
-  **Patterns (timer-driven on/off, no dimming)**
+  **Patterns**
   STEADY = on
   SLOW = 1 Hz (500 ms on / 500 ms off)
   FAST = 4 Hz (125 ms on / 125 ms off)
   TRIPLE = three 100 ms flashes, then off
   BEAT = one 100 ms flash, repeated at a stated interval
 
-  **LED priority (highest first, higher preempts lower)**
+  **LED priority**
   1. Faults: INIT_FAULT, SENSOR_ERROR, SHUTDOWN
   2. STORAGE_ERROR
   3. BLE: PAIRING, CONNECTED
   4. Measurement activity: MEASURING, PROCESSING
   5. Hydration result
-  6. BATTERY_LOW beat (shows only when LED is otherwise idle)
+  6. BATTERY_LOW beat
   SLEEP beat only exists in SLEEP, so it never competes.
 endlegend
 
@@ -38,9 +38,9 @@ endlegend
 
 state INIT : LED: white STEADY (boot)
 state INIT_FAULT : LED: red FAST
-state SHUTDOWN : LED: off\nRed FAST for 2 s on button press\nStops the pipeline (drive off), then the radio
-state SLEEP_PREP : LED: off\nStops the pipeline (drive off), then the radio
-state SLEEP : LED: white BEAT every ~4 s\nPeriodic wake: battery check
+state SHUTDOWN : LED: off\nRed FAST for 2 s on button press
+state SLEEP_PREP : LED: off\nStops the pipeline, then the radio
+state SLEEP : LED: white BEAT
 
 INIT --> INIT : watchdog reset
 INIT --> INIT_FAULT : Init Fail
@@ -51,12 +51,12 @@ INIT --> SHUTDOWN : BATTERY_CRITICAL
 state Active {
 
   state Measurement {
-    state M_IDLE : LED: hydration result for 10 s\nafter an accepted result, then off\nred STEADY = low\nyellow STEADY = mild\ngreen STEADY = balanced\ncyan STEADY = over
+    state M_IDLE : LED: hydration result for 10 s
     state MEASURING : LED: magenta SLOW
     state PROCESSING : LED: magenta FAST
     state SENSOR_ERROR : LED: red SLOW
     state RESULT_READY : LED: hydration result (as M_IDLE)
-    state STORE_LOCAL : LED: none (keeps result color)\nStores the record as unsent, kicks the BLE sender
+    state STORE_LOCAL : LED: none\nStores the record as unsent, kicks the BLE sender
     state STORAGE_ERROR : LED: yellow SLOW
 
     [*] --> M_IDLE
@@ -101,18 +101,6 @@ state Active {
     DISCONNECTED --> BLE_IDLE : re-advertise
   }
 }
-
-note right of Active
-  Measurement and BLE run in parallel.
-  The battery has no region: a periodic check runs
-  in every state. LOW shows yellow BEAT every 5 s.
-  CRITICAL moves INIT, Active or SLEEP to SHUTDOWN.
-  All short button presses assume BLE != PAIRING.
-  Data path: sensor -> watch -> phone
-  (sensor transmits to watch, watch sends data to phone).
-  Hydration thresholds (low / mild / balanced / over)
-  are TBD and must be defined before implementation.
-end note
 
 Active --> SLEEP_PREP : M_IDLE for >= 10 s (result display done)\nand electrodes detached\nand Mode != Continuous
 Active --> SHUTDOWN : BATTERY_CRITICAL
