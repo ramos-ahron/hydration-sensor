@@ -3,9 +3,9 @@ IndentWidth: 4
 UseTab: Never
 BreakBeforeBraces: Linux
 ColumnLimit: 100
-AllowShortFunctionsOnASingleLine: All
-AllowShortIfStatementsOnASingleLine: AllIfsAndElse
-AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Never
 SortIncludes: CaseSensitive
 Cpp11BracedListStyle: false
 SpacesBeforeTrailingComments: 2

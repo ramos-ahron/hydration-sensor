@@ -16,7 +16,9 @@ static int batt_events;
  */
 void fsm_post(state_event_e event)
 {
-    if (event == STATE_EVENT_BATTERY_CHANGED) { batt_events++; }
+    if (event == STATE_EVENT_BATTERY_CHANGED) {
+        batt_events++;
+    }
 }
 
 /**

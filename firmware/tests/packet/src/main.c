@@ -117,7 +117,9 @@ static size_t reassemble(const uint8_t *pkt, size_t len, size_t att, uint8_t *ou
         zassert_equal(f[4], i);
         zassert_equal(f[5], n);
         zassert_true(w <= att);
-        if (i + 1 < n) { zassert_equal(w, att); }
+        if (i + 1 < n) {
+            zassert_equal(w, att);
+        }
         memcpy(&out[total], &f[PACKET_FRAG_HDR_LEN], w - PACKET_FRAG_HDR_LEN);
         total += w - PACKET_FRAG_HDR_LEN;
     }

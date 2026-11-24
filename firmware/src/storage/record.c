@@ -101,7 +101,10 @@ SETTINGS_STATIC_HANDLER_DEFINE(hs, "hs", NULL, set_cb, NULL, NULL);
  * @param[out] key  Receives the key. Must hold 16 bytes.
  * @param[in]  id   Record ID.
  */
-static void slot_key(char *key, uint16_t id) { snprintf(key, 16, "hs/r/%u", id % SLOTS); }
+static void slot_key(char *key, uint16_t id)
+{
+    snprintf(key, 16, "hs/r/%u", id % SLOTS);
+}
 
 /**
  * @brief Copies one slot value into a buffer during settings_load_subtree_direct().
@@ -118,7 +121,9 @@ static void slot_key(char *key, uint16_t id) { snprintf(key, 16, "hs/r/%u", id %
  * @retval -EIO  The read failed.
  */
 static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *arg, void *param)
-{ return read_cb(arg, param, HDR + RECORD_MAX_LEN) < 0 ? -EIO : 1; }
+{
+    return read_cb(arg, param, HDR + RECORD_MAX_LEN) < 0 ? -EIO : 1;
+}
 
 /**
  * @brief Reads the slot value of record @p id from flash.
@@ -175,7 +180,9 @@ static int wr_slot(uint16_t id, bool sent, const uint8_t *rec, size_t len)
  * @retval -EIO  The write failed.
  */
 static int wr_meta(const struct meta *nm)
-{ return settings_save_one("hs/meta", nm, sizeof(*nm)) ? -EIO : 0; }
+{
+    return settings_save_one("hs/meta", nm, sizeof(*nm)) ? -EIO : 0;
+}
 
 /**
  * @brief Gives the ID of the oldest record in the log.
@@ -185,7 +192,10 @@ static int wr_meta(const struct meta *nm)
  *
  * @return ID of the oldest record.
  */
-static uint16_t oldest_id(void) { return (uint16_t)(m.next_id - m.count); }
+static uint16_t oldest_id(void)
+{
+    return (uint16_t)(m.next_id - m.count);
+}
 
 int record_init(void)
 {
@@ -196,7 +206,9 @@ int record_init(void)
         struct meta nm;
 
         rc = settings_subsys_init();
-        if (!rc) { rc = settings_load_subtree("hs"); }
+        if (!rc) {
+            rc = settings_load_subtree("hs");
+        }
         nm = m;
         nm.boot++;
         if (!rc && wr_meta(&nm) == 0) {
@@ -216,22 +228,32 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id)
     uint16_t slot;
     int rc;
 
-    if (len < 1 || len > RECORD_MAX_LEN) { return -EMSGSIZE; }
+    if (len < 1 || len > RECORD_MAX_LEN) {
+        return -EMSGSIZE;
+    }
     k_mutex_lock(&lock, K_FOREVER);
     nm = m;
     slot = m.next_id % SLOTS;
     if (fault) {
         rc = -EIO;
     } else {
-        if (m.count == SLOTS && mirror[slot].valid && !mirror[slot].sent) { nm.lost++; }
+        if (m.count == SLOTS && mirror[slot].valid && !mirror[slot].sent) {
+            nm.lost++;
+        }
         nm.next_id++;
-        if (nm.count < SLOTS) { nm.count++; }
+        if (nm.count < SLOTS) {
+            nm.count++;
+        }
         // record first, meta second so a power cut never leaves meta pointing at nothing
         rc = wr_slot(m.next_id, sent, rec, len);
-        if (!rc) { rc = wr_meta(&nm); }
+        if (!rc) {
+            rc = wr_meta(&nm);
+        }
     }
     if (!rc) {
-        if (id) { *id = m.next_id; }
+        if (id) {
+            *id = m.next_id;
+        }
         mirror[slot] = (struct slot){ sent, len, 1 };
         m = nm;
     }
@@ -260,7 +282,9 @@ static int out(uint16_t id, uint8_t *rec, size_t *len, bool *sent)
     if (!rc) {
         memcpy(rec, buf + HDR, buf[1]);
         *len = buf[1];
-        if (sent) { *sent = buf[0]; }
+        if (sent) {
+            *sent = buf[0];
+        }
     }
     return rc;
 }
@@ -275,7 +299,9 @@ int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id)
 
         if (mirror[cur % SLOTS].valid && !mirror[cur % SLOTS].sent) {
             rc = out(cur, rec, len, NULL);
-            if (!rc && id) { *id = cur; }
+            if (!rc && id) {
+                *id = cur;
+            }
             break;
         }
     }
@@ -293,7 +319,9 @@ int record_mark_sent(uint16_t id)
         rc = rd_slot(id, buf);
         if (!rc && !buf[0]) {
             rc = wr_slot(id, true, buf + HDR, buf[1]);
-            if (!rc) { mirror[id % SLOTS].sent = 1; }
+            if (!rc) {
+                mirror[id % SLOTS].sent = 1;
+            }
         }
     }
     k_mutex_unlock(&lock);
@@ -309,15 +337,23 @@ int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bo
         uint16_t cur = m.next_id - 1 - back;
 
         rc = out(cur, rec, len, sent);
-        if (!rc && id) { *id = cur; }
+        if (!rc && id) {
+            *id = cur;
+        }
     }
     k_mutex_unlock(&lock);
     return rc;
 }
 
-uint16_t record_next_id(void) { return m.next_id; }
+uint16_t record_next_id(void)
+{
+    return m.next_id;
+}
 
-uint16_t record_count(void) { return m.count; }
+uint16_t record_count(void)
+{
+    return m.count;
+}
 
 uint16_t record_unsent(void)
 {
@@ -331,11 +367,20 @@ uint16_t record_unsent(void)
     return n;
 }
 
-uint32_t record_lost(void) { return m.lost; }
+uint32_t record_lost(void)
+{
+    return m.lost;
+}
 
-uint16_t record_session_id(void) { return m.boot; }
+uint16_t record_session_id(void)
+{
+    return m.boot;
+}
 
-void record_inject_fault(bool on) { fault = on; }
+void record_inject_fault(bool on)
+{
+    fault = on;
+}
 
 int record_clear(void)
 {
@@ -354,8 +399,12 @@ int record_clear(void)
     nm = m;
     nm.count = 0;
     nm.lost = 0;
-    if (!rc) { rc = wr_meta(&nm); }
-    if (!rc) { m = nm; }
+    if (!rc) {
+        rc = wr_meta(&nm);
+    }
+    if (!rc) {
+        m = nm;
+    }
     k_mutex_unlock(&lock);
     return rc;
 }
@@ -384,7 +433,9 @@ static int cmd_list(const struct shell *sh, size_t argc, char **argv)
         uint16_t id;
         bool sent;
 
-        if (record_store_peek(b, rec, &len, &id, &sent)) { break; }
+        if (record_store_peek(b, rec, &len, &id, &sent)) {
+            break;
+        }
         for (size_t i = 0; i < len; i++) {
             snprintf(hex + 2 * i, 3, "%02x", rec[i]);
         }
@@ -422,7 +473,10 @@ static int cmd_stat(const struct shell *sh, size_t argc, char **argv)
  * @retval 0     All records are deleted.
  * @retval -EIO  A delete or write failed.
  */
-static int cmd_clear(const struct shell *sh, size_t argc, char **argv) { return record_clear(); }
+static int cmd_clear(const struct shell *sh, size_t argc, char **argv)
+{
+    return record_clear();
+}
 
 /**
  * @brief "hs store fault <0|1>": sets the test fault. See record_inject_fault().

@@ -53,7 +53,9 @@ static void reset_cause_read(void)
 {
     uint32_t cause = 0;
 
-    if (reset_read) { return; }
+    if (reset_read) {
+        return;
+    }
     reset_read = true;
     if (hwinfo_get_reset_cause(&cause) == 0) {
         reset_wdt = (cause & RESET_WATCHDOG) != 0;
@@ -78,7 +80,9 @@ static int batt_read_hw(void)
         return BATT_UNKNOWN;
     }
     mv = raw;
-    if (adc_raw_to_millivolts_dt(&batt_adc, &mv)) { return BATT_UNKNOWN; }
+    if (adc_raw_to_millivolts_dt(&batt_adc, &mv)) {
+        return BATT_UNKNOWN;
+    }
     return mv < 0 ? 0 : mv;
 #else
     return BATT_UNKNOWN;
@@ -105,7 +109,9 @@ static void batt_evaluate(bool periodic)
         fsm_post(STATE_EVENT_BATTERY_CHANGED);
     }
     k_mutex_unlock(&batt_lock);
-    if (changed) { LOG_INF("battery %d mV, level %d", mv, lvl); }
+    if (changed) {
+        LOG_INF("battery %d mV, level %d", mv, lvl);
+    }
 }
 
 /**
@@ -141,24 +147,33 @@ void safety_set_batt_override(int mv)
  * @param[in] v  0 means VBUS is absent. Any positive value means VBUS is present. A negative
  *               value means use the hardware.
  */
-void safety_set_vbus_override(int v) { vbus_override = v < 0 ? -1 : (v != 0); }
+void safety_set_vbus_override(int v)
+{
+    vbus_override = v < 0 ? -1 : (v != 0);
+}
 
 int safety_init(void)
 {
     const struct device *hw_wdt = NULL;
     int err;
 
-    if (inited) { return 0; }
+    if (inited) {
+        return 0;
+    }
     inited = true;
     reset_cause_read();
 
 #if defined(CONFIG_TASK_WDT_HW_FALLBACK) && defined(CONFIG_WATCHDOG)
     hw_wdt = DEVICE_DT_GET_OR_NULL(DT_ALIAS(watchdog0));
-    if (hw_wdt != NULL && !device_is_ready(hw_wdt)) { hw_wdt = NULL; }
+    if (hw_wdt != NULL && !device_is_ready(hw_wdt)) {
+        hw_wdt = NULL;
+    }
 #endif
     err = task_wdt_init(hw_wdt);
     wdt_ok = err == 0;
-    if (!wdt_ok) { LOG_WRN("task watchdog init failed (err %d); drive runs unguarded", err); }
+    if (!wdt_ok) {
+        LOG_WRN("task watchdog init failed (err %d); drive runs unguarded", err);
+    }
     /*
      * Arm the hardware fallback now. The nRF WDT keeps running across a soft reset and cannot
      * be stopped, so it has to be fed from boot, not only from the first measurement.
@@ -168,7 +183,9 @@ int safety_init(void)
 
 #ifdef HAS_BATT_ADC
     batt_adc_ok = adc_is_ready_dt(&batt_adc) && adc_channel_setup_dt(&batt_adc) == 0;
-    if (!batt_adc_ok) { LOG_WRN("battery ADC unavailable"); }
+    if (!batt_adc_ok) {
+        LOG_WRN("battery ADC unavailable");
+    }
 #else
     LOG_WRN("no battery ADC channel");
 #endif
@@ -180,7 +197,9 @@ int safety_init(void)
 
 bool safety_vbus_present(void)
 {
-    if (vbus_override >= 0) { return vbus_override != 0; }
+    if (vbus_override >= 0) {
+        return vbus_override != 0;
+    }
 #if defined(NRF_POWER) && NRF_POWER_HAS_USBREG
     return nrf_power_usbregstatus_vbusdet_get(NRF_POWER);
 #else
@@ -190,7 +209,9 @@ bool safety_vbus_present(void)
 
 int safety_check(void)
 {
-    if (!safety_vbus_present()) { return 0; }
+    if (!safety_vbus_present()) {
+        return 0;
+    }
     if (IS_ENABLED(CONFIG_BENCH_ALLOW_USB)) {
         LOG_INF("VBUS present, bench override lets the measurement through");
         return 0;
@@ -201,18 +222,24 @@ int safety_check(void)
 
 void safety_drive_begin(void)
 {
-    if (!wdt_ok) { return; }
+    if (!wdt_ok) {
+        return;
+    }
     if (wdt_id >= 0) {
         (void)task_wdt_feed(wdt_id);
         return;
     }
     wdt_id = task_wdt_add(DRIVE_WDT_MS, NULL, NULL);
-    if (wdt_id < 0) { LOG_WRN("drive watchdog add failed (err %d)", wdt_id); }
+    if (wdt_id < 0) {
+        LOG_WRN("drive watchdog add failed (err %d)", wdt_id);
+    }
 }
 
 void safety_drive_feed(void)
 {
-    if (wdt_id >= 0) { (void)task_wdt_feed(wdt_id); }
+    if (wdt_id >= 0) {
+        (void)task_wdt_feed(wdt_id);
+    }
 }
 
 void safety_drive_end(void)
@@ -229,9 +256,15 @@ bool safety_reset_was_watchdog(void)
     return reset_wdt;
 }
 
-int battery_mv(void) { return batt_mv_last; }
+int battery_mv(void)
+{
+    return batt_mv_last;
+}
 
-battery_level_e battery_level(void) { return batt_lvl; }
+battery_level_e battery_level(void)
+{
+    return batt_lvl;
+}
 
 bool battery_above_margin(void)
 {

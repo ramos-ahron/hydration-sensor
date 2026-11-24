@@ -60,7 +60,9 @@ int packet_parse(const uint8_t *buf, size_t len, struct packet *pkt)
 {
     const uint8_t *p = buf;
 
-    if (len != PACKET_SIZE) { return -EMSGSIZE; }
+    if (len != PACKET_SIZE) {
+        return -EMSGSIZE;
+    }
     if (crc16_itu_t(PACKET_CRC_INIT, buf, PACKET_CRC_OFF) != sys_get_le16(&buf[PACKET_CRC_OFF])) {
         return -EBADMSG;
     }
@@ -71,7 +73,9 @@ int packet_parse(const uint8_t *buf, size_t len, struct packet *pkt)
 
 size_t packet_frag_count(size_t pkt_len, size_t att_payload)
 {
-    if (att_payload <= PACKET_FRAG_HDR_LEN) { return 0; }
+    if (att_payload <= PACKET_FRAG_HDR_LEN) {
+        return 0;
+    }
 
     const size_t chunk = att_payload - PACKET_FRAG_HDR_LEN;
     const size_t n = DIV_ROUND_UP(pkt_len, chunk);
@@ -85,7 +89,9 @@ size_t packet_frag_build(const uint8_t *pkt, size_t pkt_len, uint16_t session_id
 {
     const size_t count = packet_frag_count(pkt_len, att_payload);
 
-    if (index >= count) { return 0; }
+    if (index >= count) {
+        return 0;
+    }
 
     const size_t chunk = att_payload - PACKET_FRAG_HDR_LEN;
     const size_t off = (size_t)index * chunk;

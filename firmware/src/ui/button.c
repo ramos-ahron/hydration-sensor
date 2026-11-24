@@ -18,7 +18,9 @@ static void button_cb(struct input_event *evt, void *user_data)
     ARG_UNUSED(user_data);
 
     // Ignore releases, focus on press
-    if (evt->type != INPUT_EV_KEY || evt->value != 1) { return; }
+    if (evt->type != INPUT_EV_KEY || evt->value != 1) {
+        return;
+    }
 
     // Codes come from the overlay
     state_event_e event;

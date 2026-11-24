@@ -119,7 +119,9 @@ static led_color_e led_resolve(int64_t now_ms, int64_t *next_change_ms)
         bool done;
         bool on;
 
-        if (!s->active) { continue; }
+        if (!s->active) {
+            continue;
+        }
         on = led_phase(s, now_ms, &next, &done);
 
         // Clear the slot when its pattern is done or its end time has passed.
@@ -184,7 +186,9 @@ static void led_work_fn(struct k_work *work)
 void led_request(led_prio_e prio, led_color_e color, led_pattern_e pattern, uint32_t period_ms,
                  uint32_t duration_ms)
 {
-    if ((unsigned int)prio >= LED_PRIO_COUNT) { return; }
+    if ((unsigned int)prio >= LED_PRIO_COUNT) {
+        return;
+    }
     k_spinlock_key_t key = k_spin_lock(&lock);
     int64_t now = k_uptime_get();
 
@@ -202,7 +206,9 @@ void led_request(led_prio_e prio, led_color_e color, led_pattern_e pattern, uint
 
 void led_clear(led_prio_e prio)
 {
-    if ((unsigned int)prio >= LED_PRIO_COUNT) { return; }
+    if ((unsigned int)prio >= LED_PRIO_COUNT) {
+        return;
+    }
     k_spinlock_key_t key = k_spin_lock(&lock);
     slots[prio].active = false;
     k_spin_unlock(&lock, key);
@@ -224,7 +230,10 @@ void led_clear_all(void)
     led_update();
 }
 
-led_color_e led_current(void) { return cur_color; }
+led_color_e led_current(void)
+{
+    return cur_color;
+}
 
 #if LED_HAVE_PINS
 /**
@@ -238,9 +247,13 @@ led_color_e led_current(void) { return cur_color; }
 static int led_init(void)
 {
     for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
-        if (!gpio_is_ready_dt(&leds[i])) { return -ENODEV; }
+        if (!gpio_is_ready_dt(&leds[i])) {
+            return -ENODEV;
+        }
         int err = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
-        if (err) { return err; }
+        if (err) {
+            return err;
+        }
     }
     return 0;
 }

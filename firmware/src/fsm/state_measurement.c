@@ -108,7 +108,9 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                 uint32_t guard_ms = SLEEP_GUARD_MS;
 
                 // Leave extra time to show the result LED after a measurement was stored
-                if (from == MEASUREMENT_STATE_STORE_LOCAL) { guard_ms += RESULT_DISPLAY_MS; }
+                if (from == MEASUREMENT_STATE_STORE_LOCAL) {
+                    guard_ms += RESULT_DISPLAY_MS;
+                }
 
                 fsm_timer_start(FSM_TIMER_SLEEP_GUARD, STATE_EVENT_SLEEP_GUARD, guard_ms);
             }
@@ -189,7 +191,10 @@ bool state_measurement_busy(void)
            measurement_state == MEASUREMENT_STATE_PROCESSING;
 }
 
-bool state_measurement_idle(void) { return measurement_state == MEASUREMENT_STATE_M_IDLE; }
+bool state_measurement_idle(void)
+{
+    return measurement_state == MEASUREMENT_STATE_M_IDLE;
+}
 
 bool state_measurement_process_event(state_event_e event)
 {

@@ -89,7 +89,10 @@ void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
     (void)k_work_reschedule(&timers[timer].dwork, K_MSEC(ms));
 }
 
-void fsm_timer_stop(fsm_timer_e timer) { (void)k_work_cancel_delayable(&timers[timer].dwork); }
+void fsm_timer_stop(fsm_timer_e timer)
+{
+    (void)k_work_cancel_delayable(&timers[timer].dwork);
+}
 
 /**
  * @brief Make a top-level state transition.
@@ -163,7 +166,9 @@ void state_machine_process_event(state_event_e event)
         }
     }
 
-    if (state == STATE_ACTIVE && state_active_process_event(event)) { return; }
+    if (state == STATE_ACTIVE && state_active_process_event(event)) {
+        return;
+    }
 
     for (size_t i = 0; i < ARRAY_SIZE(state_transitions); i++) {
         if (state == state_transitions[i].from && event == state_transitions[i].event) {

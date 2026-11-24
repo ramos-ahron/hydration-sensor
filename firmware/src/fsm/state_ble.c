@@ -153,12 +153,17 @@ static void send_next_unsent(void)
     }
 }
 
-bool state_ble_pairing(void) { return ble_state == BLE_STATE_PAIRING; }
+bool state_ble_pairing(void)
+{
+    return ble_state == BLE_STATE_PAIRING;
+}
 
 bool state_ble_process_event(state_event_e event, bool measurement_busy)
 {
     // Ensure measurement is not busy before transitioning
-    if (event == STATE_EVENT_BUTTON_LONG && measurement_busy) { return false; }
+    if (event == STATE_EVENT_BUTTON_LONG && measurement_busy) {
+        return false;
+    }
 
     if (ble_state == BLE_STATE_CONNECTED) {
         if ((event == STATE_EVENT_TX_KICK || event == STATE_EVENT_BLE_SUBSCRIBED) &&
@@ -171,7 +176,9 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
             return true;
         }
         if (event == STATE_EVENT_TX_DONE && sync_sending && !tx_stalled) {
-            if (record_mark_sent(tx_id) != 0) { LOG_WRN("record %u gone before marked", tx_id); }
+            if (record_mark_sent(tx_id) != 0) {
+                LOG_WRN("record %u gone before marked", tx_id);
+            }
             send_next_unsent();
             return true;
         }

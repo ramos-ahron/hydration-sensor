@@ -22,7 +22,9 @@ static float window[ACCEL_WINDOW_SAMPLES][3];
 
 float a_rms(const float (*a)[3], size_t n)
 {
-    if (n == 0) { return NAN; }
+    if (n == 0) {
+        return NAN;
+    }
     float mean[3] = { 0 };
     for (size_t i = 0; i < n; i++) {
         for (int k = 0; k < 3; k++) {
@@ -49,7 +51,10 @@ float a_rms(const float (*a)[3], size_t n)
  *
  * @return true when @p dev is not NULL and is ready, and false when it is not.
  */
-static bool dev_usable(const struct device *dev) { return dev != NULL && device_is_ready(dev); }
+static bool dev_usable(const struct device *dev)
+{
+    return dev != NULL && device_is_ready(dev);
+}
 
 int sensor_init(void)
 {
@@ -61,14 +66,20 @@ int sensor_init(void)
 int get_motion(float *rms)
 {
     if (ovr.accel_active) {
-        if (ovr.accel_fault) { return -EIO; }
+        if (ovr.accel_fault) {
+            return -EIO;
+        }
         *rms = ovr.a_rms;
         return 0;
     }
-    if (!dev_usable(accel_dev)) { return -ENODEV; }
+    if (!dev_usable(accel_dev)) {
+        return -ENODEV;
+    }
     for (size_t i = 0; i < ACCEL_WINDOW_SAMPLES; i++) {
         struct sensor_value v[3];
-        if (i > 0) { k_msleep(ACCEL_SAMPLE_PERIOD_MS); }
+        if (i > 0) {
+            k_msleep(ACCEL_SAMPLE_PERIOD_MS);
+        }
         if (sensor_sample_fetch(accel_dev) != 0 ||
             sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, v) != 0) {
             return -EIO;
@@ -83,7 +94,9 @@ int get_motion(float *rms)
     for (size_t i = 1; i < ACCEL_WINDOW_SAMPLES && stuck; i++) {
         stuck = memcmp(window[i], window[0], sizeof(window[0])) == 0;
     }
-    if (stuck) { return -EIO; }
+    if (stuck) {
+        return -EIO;
+    }
     *rms = a_rms(window, ACCEL_WINDOW_SAMPLES);
     return 0;
 }
@@ -92,11 +105,15 @@ int get_temp(int16_t *centi_c)
 {
     *centi_c = INT16_MIN;
     if (ovr.temp_active) {
-        if (ovr.temp_fault) { return -EIO; }
+        if (ovr.temp_fault) {
+            return -EIO;
+        }
         *centi_c = ovr.temp_centi_c;
         return 0;
     }
-    if (!dev_usable(temp_dev)) { return -ENODEV; }
+    if (!dev_usable(temp_dev)) {
+        return -ENODEV;
+    }
     struct sensor_value v;
     if (sensor_sample_fetch(temp_dev) != 0 ||
         sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &v) != 0) {
@@ -105,7 +122,9 @@ int get_temp(int16_t *centi_c)
     /* v.val1 is the integer part in C. v.val2 is the fraction in millionths of 1 C.
      * Adding +/-5000 before the division rounds to the nearest 0.01 C. */
     int32_t cc = v.val1 * 100 + (v.val2 + (v.val2 >= 0 ? 5000 : -5000)) / 10000;
-    if (cc <= INT16_MIN || cc > INT16_MAX) { return -EIO; }
+    if (cc <= INT16_MIN || cc > INT16_MAX) {
+        return -EIO;
+    }
     *centi_c = (int16_t)cc;
     return 0;
 }

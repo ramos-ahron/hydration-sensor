@@ -32,7 +32,9 @@ static bool failed(int err, const char *name)
         LOG_WRN("%s not implemented", name);
         return false;
     }
-    if (err != 0) { LOG_ERR("%s failed (err %d)", name, err); }
+    if (err != 0) {
+        LOG_ERR("%s failed (err %d)", name, err);
+    }
     return err != 0;
 }
 
@@ -102,7 +104,9 @@ static void process_handler(struct k_work *work)
     };
 
     for (size_t i = 0; i < ARRAY_SIZE(steps) && result.reject == REJECT_NONE; i++) {
-        if (failed(steps[i].fn(), steps[i].name)) { result.reject = REJECT_MATH; }
+        if (failed(steps[i].fn(), steps[i].name)) {
+            result.reject = REJECT_MATH;
+        }
     }
     fsm_post(STATE_EVENT_COMPUTE_DONE);
 }
@@ -135,11 +139,20 @@ static int pipeline_init(void)
 }
 SYS_INIT(pipeline_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
-void pipeline_measure(void) { (void)k_work_submit_to_queue(&pipeline_q, &measure_work); }
+void pipeline_measure(void)
+{
+    (void)k_work_submit_to_queue(&pipeline_q, &measure_work);
+}
 
-void pipeline_process(void) { (void)k_work_submit_to_queue(&pipeline_q, &process_work); }
+void pipeline_process(void)
+{
+    (void)k_work_submit_to_queue(&pipeline_q, &process_work);
+}
 
-const struct result *pipeline_result(void) { return &result; }
+const struct result *pipeline_result(void)
+{
+    return &result;
+}
 
 void pipeline_stop(void)
 {

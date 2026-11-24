@@ -101,7 +101,9 @@ static void stop_adv(void)
     adv_mode = ADV_OFF;
     pairing_open = false;
     int err = bt_le_adv_stop();
-    if (err) { LOG_ERR("Advertising stop failed (err %d)", err); }
+    if (err) {
+        LOG_ERR("Advertising stop failed (err %d)", err);
+    }
 }
 
 /**
@@ -126,7 +128,9 @@ static void accept_bond(const struct bt_bond_info *info, void *user_data)
 {
     ARG_UNUSED(user_data);
     int err = bt_le_filter_accept_list_add(&info->addr);
-    if (err) { LOG_ERR("Accept list add failed (err %d)", err); }
+    if (err) {
+        LOG_ERR("Accept list add failed (err %d)", err);
+    }
 }
 
 /**
@@ -152,7 +156,9 @@ static void ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
     ARG_UNUSED(attr);
     LOG_INF("Notifications %s", (value & BT_GATT_CCC_NOTIFY) ? "on" : "off");
-    if (value & BT_GATT_CCC_NOTIFY) { fsm_post(STATE_EVENT_BLE_SUBSCRIBED); }
+    if (value & BT_GATT_CCC_NOTIFY) {
+        fsm_post(STATE_EVENT_BLE_SUBSCRIBED);
+    }
 }
 
 /**
@@ -209,7 +215,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
  */
 static void recycled(void)
 {
-    if (adv_mode != ADV_OFF && !current_conn) { adv_start(); }
+    if (adv_mode != ADV_OFF && !current_conn) {
+        adv_start();
+    }
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
@@ -275,7 +283,9 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
 
 int ble_init(void)
 {
-    if (ready) { return 0; }
+    if (ready) {
+        return 0;
+    }
     int err = bt_enable(NULL);
     if (err && err != -EALREADY) {
         LOG_ERR("bt_enable failed (err %d)", err);
@@ -302,7 +312,9 @@ int ble_init(void)
 
 void ble_adv_bonded(void)
 {
-    if (!ready) { return; }
+    if (!ready) {
+        return;
+    }
     stop_adv();
     if (bond_count() == 0) {
         return;  // BLE_IDLE without a bond does not advertise.
@@ -319,7 +331,9 @@ void ble_adv_bonded(void)
 
 void ble_adv_pairing(void)
 {
-    if (!ready) { return; }
+    if (!ready) {
+        return;
+    }
     stop_adv();
     pairing_open = true;
     adv_mode = ADV_PAIRING;
@@ -328,15 +342,21 @@ void ble_adv_pairing(void)
 
 void ble_adv_stop(void)
 {
-    if (!ready) { return; }
+    if (!ready) {
+        return;
+    }
     stop_adv();
 }
 
 void ble_disconnect(void)
 {
-    if (!current_conn) { return; }
+    if (!current_conn) {
+        return;
+    }
     int err = bt_conn_disconnect(current_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-    if (err) { LOG_ERR("Disconnect failed (err %d)", err); }
+    if (err) {
+        LOG_ERR("Disconnect failed (err %d)", err);
+    }
 }
 
 /**
@@ -355,7 +375,10 @@ static bool subscribed(struct bt_conn *conn)
            bt_gatt_is_subscribed(conn, RECORD_ATTR, BT_GATT_CCC_NOTIFY);
 }
 
-bool ble_subscribed(void) { return subscribed(current_conn); }
+bool ble_subscribed(void)
+{
+    return subscribed(current_conn);
+}
 
 /**
  * @brief Post TX_DONE when the stack sent the last fragment of a packet.
@@ -377,12 +400,18 @@ int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t seque
     struct bt_conn *conn = current_conn;
     uint8_t buf[FRAG_MAX];
 
-    if (!conn) { return -ENOTCONN; }
-    if (!subscribed(conn)) { return -EACCES; }
+    if (!conn) {
+        return -ENOTCONN;
+    }
+    if (!subscribed(conn)) {
+        return -EACCES;
+    }
     const uint16_t mtu = bt_gatt_get_mtu(conn);
     const size_t payload = MIN((size_t)mtu - 3, sizeof(buf));
     const size_t n = packet_frag_count(len, payload);
-    if (n == 0) { return -EMSGSIZE; }
+    if (n == 0) {
+        return -EMSGSIZE;
+    }
 
     for (; *frag < n; (*frag)++) {
         struct bt_gatt_notify_params params = {
@@ -393,7 +422,9 @@ int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t seque
         };
         const int err = bt_gatt_notify_cb(conn, &params);
 
-        if (err == -ENOMEM) { return err; }
+        if (err == -ENOMEM) {
+            return err;
+        }
         if (err) {
             LOG_ERR("Packet seq %u fragment %zu/%zu failed (err %d)", sequence, *frag + 1, n, err);
             return err;
@@ -443,7 +474,9 @@ static int cmd_unpair(const struct shell *sh, size_t argc, char **argv)
     ARG_UNUSED(argv);
     int err = bt_unpair(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
 
-    if (adv_mode == ADV_BONDED) { ble_adv_stop(); }
+    if (adv_mode == ADV_BONDED) {
+        ble_adv_stop();
+    }
     shell_print(sh, "unpair rc=%d bonds=%zu", err, bond_count());
     return 0;
 }
