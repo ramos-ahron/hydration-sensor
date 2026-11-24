@@ -87,8 +87,10 @@ static void ble_enter(ble_state_e from, ble_state_e to)
 
     switch (to) {
         case BLE_STATE_BLE_IDLE:
-            __ASSERT(from == BLE_STATE_BLE_IDLE || from == BLE_STATE_PAIRING ||
-                         from == BLE_STATE_CONNECTED || from == BLE_STATE_DISCONNECTED,
+            __ASSERT(from == BLE_STATE_BLE_IDLE
+                         || from == BLE_STATE_PAIRING
+                         || from == BLE_STATE_CONNECTED
+                         || from == BLE_STATE_DISCONNECTED,
                      "BLE_IDLE entered from %d", from);
             ble_disconnect();
             ble_adv_bonded();
@@ -145,8 +147,8 @@ static void send_frags(void)
  */
 static void send_next_unsent(void)
 {
-    sync_sending = record_oldest_unsent(tx_buf, &tx_len, &tx_id) == 0 &&
-                   packet_parse(tx_buf, tx_len, &tx_rec) == 0;
+    sync_sending = record_oldest_unsent(tx_buf, &tx_len, &tx_id) == 0
+                   && packet_parse(tx_buf, tx_len, &tx_rec) == 0;
     if (sync_sending) {
         tx_frag = 0;
         send_frags();
@@ -166,8 +168,8 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
     }
 
     if (ble_state == BLE_STATE_CONNECTED) {
-        if ((event == STATE_EVENT_TX_KICK || event == STATE_EVENT_BLE_SUBSCRIBED) &&
-            !sync_sending) {
+        if ((event == STATE_EVENT_TX_KICK || event == STATE_EVENT_BLE_SUBSCRIBED)
+            && !sync_sending) {
             send_next_unsent();
             return true;
         }

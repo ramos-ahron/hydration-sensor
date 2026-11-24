@@ -5,8 +5,9 @@
 #include <zephyr/kernel.h>
 
 #define LED_HAVE_PINS                                                                              \
-    (DT_NODE_EXISTS(DT_ALIAS(red_led)) && DT_NODE_EXISTS(DT_ALIAS(green_led)) &&                   \
-     DT_NODE_EXISTS(DT_ALIAS(blue_led)))
+    (DT_NODE_EXISTS(DT_ALIAS(red_led))                                                             \
+     && DT_NODE_EXISTS(DT_ALIAS(green_led))                                                        \
+     && DT_NODE_EXISTS(DT_ALIAS(blue_led)))
 #define LED_FLASH_MS 100
 #define LED_NEVER    INT64_MAX
 

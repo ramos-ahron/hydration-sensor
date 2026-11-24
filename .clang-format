@@ -3,6 +3,8 @@ IndentWidth: 4
 UseTab: Never
 BreakBeforeBraces: Linux
 ColumnLimit: 100
+BreakBeforeBinaryOperators: NonAssignment
+BreakBinaryOperations: RespectPrecedence
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortBlocksOnASingleLine: Never

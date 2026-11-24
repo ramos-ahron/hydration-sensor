@@ -18,8 +18,10 @@ LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
 void state_init_run(state_e from)
 {
-    __ASSERT(from == STATE_INIT || from == STATE_INIT_FAULT || from == STATE_SLEEP ||
-                 from == STATE_SHUTDOWN,
+    __ASSERT(from == STATE_INIT
+                 || from == STATE_INIT_FAULT
+                 || from == STATE_SLEEP
+                 || from == STATE_SHUTDOWN,
              "INIT entered from %d", from);
 
     led_request(LED_PRIO_POWER, LED_WHITE, LED_PAT_STEADY, 0, 0);

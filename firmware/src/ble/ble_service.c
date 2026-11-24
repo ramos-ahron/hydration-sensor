@@ -74,11 +74,11 @@ static void adv_start(void)
             err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
             break;
         case ADV_BONDED:
-            err = bt_le_adv_start(BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_FILTER_CONN |
-                                                      BT_LE_ADV_OPT_FILTER_SCAN_REQ,
-                                                  BT_GAP_ADV_FAST_INT_MIN_2,
-                                                  BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-                                  ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+            err = bt_le_adv_start(
+                BT_LE_ADV_PARAM(
+                    BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_FILTER_CONN | BT_LE_ADV_OPT_FILTER_SCAN_REQ,
+                    BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
+                ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
             break;
         default:
             return;
@@ -371,8 +371,9 @@ void ble_disconnect(void)
  */
 static bool subscribed(struct bt_conn *conn)
 {
-    return conn && bt_conn_get_security(conn) >= BT_SECURITY_L2 &&
-           bt_gatt_is_subscribed(conn, RECORD_ATTR, BT_GATT_CCC_NOTIFY);
+    return conn
+           && bt_conn_get_security(conn) >= BT_SECURITY_L2
+           && bt_gatt_is_subscribed(conn, RECORD_ATTR, BT_GATT_CCC_NOTIFY);
 }
 
 bool ble_subscribed(void)

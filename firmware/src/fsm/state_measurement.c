@@ -86,10 +86,11 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
 
     switch (to) {
         case MEASUREMENT_STATE_M_IDLE:
-            __ASSERT(from == MEASUREMENT_STATE_M_IDLE || from == MEASUREMENT_STATE_SENSOR_ERROR ||
-                         from == MEASUREMENT_STATE_RESULT_READY ||
-                         from == MEASUREMENT_STATE_STORE_LOCAL ||
-                         from == MEASUREMENT_STATE_STORAGE_ERROR,
+            __ASSERT(from == MEASUREMENT_STATE_M_IDLE
+                         || from == MEASUREMENT_STATE_SENSOR_ERROR
+                         || from == MEASUREMENT_STATE_RESULT_READY
+                         || from == MEASUREMENT_STATE_STORE_LOCAL
+                         || from == MEASUREMENT_STATE_STORAGE_ERROR,
                      "M_IDLE entered from %d", from);
 
             led_clear(LED_PRIO_MEASURE);
@@ -187,8 +188,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
 
 bool state_measurement_busy(void)
 {
-    return measurement_state == MEASUREMENT_STATE_MEASURING ||
-           measurement_state == MEASUREMENT_STATE_PROCESSING;
+    return measurement_state == MEASUREMENT_STATE_MEASURING
+           || measurement_state == MEASUREMENT_STATE_PROCESSING;
 }
 
 bool state_measurement_idle(void)
@@ -198,13 +199,14 @@ bool state_measurement_idle(void)
 
 bool state_measurement_process_event(state_event_e event)
 {
-    if (event == STATE_EVENT_BUTTON_SHORT && measurement_state == MEASUREMENT_STATE_M_IDLE &&
-        !IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
+    if (event == STATE_EVENT_BUTTON_SHORT
+        && measurement_state == MEASUREMENT_STATE_M_IDLE
+        && !IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
         return false;
     }
 
-    if (measurement_state == MEASUREMENT_STATE_M_IDLE &&
-        battery_level() == BATTERY_LEVEL_CRITICAL) {
+    if (measurement_state == MEASUREMENT_STATE_M_IDLE
+        && battery_level() == BATTERY_LEVEL_CRITICAL) {
         return false;
     }
 

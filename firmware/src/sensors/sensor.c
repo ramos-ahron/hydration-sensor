@@ -80,8 +80,8 @@ int get_motion(float *rms)
         if (i > 0) {
             k_msleep(ACCEL_SAMPLE_PERIOD_MS);
         }
-        if (sensor_sample_fetch(accel_dev) != 0 ||
-            sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, v) != 0) {
+        if (sensor_sample_fetch(accel_dev) != 0
+            || sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, v) != 0) {
             return -EIO;
         }
         for (int k = 0; k < 3; k++) {
@@ -115,8 +115,8 @@ int get_temp(int16_t *centi_c)
         return -ENODEV;
     }
     struct sensor_value v;
-    if (sensor_sample_fetch(temp_dev) != 0 ||
-        sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &v) != 0) {
+    if (sensor_sample_fetch(temp_dev) != 0
+        || sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &v) != 0) {
         return -EIO;
     }
     /* v.val1 is the integer part in C. v.val2 is the fraction in millionths of 1 C.

@@ -157,8 +157,8 @@ void state_machine_init(void)
 void state_machine_process_event(state_event_e event)
 {
     if (event == STATE_EVENT_BATTERY_CHANGED) {
-        if ((state == STATE_INIT || state == STATE_ACTIVE || state == STATE_SLEEP) &&
-            battery_level() == BATTERY_LEVEL_CRITICAL) {
+        if ((state == STATE_INIT || state == STATE_ACTIVE || state == STATE_SLEEP)
+            && battery_level() == BATTERY_LEVEL_CRITICAL) {
             event = STATE_EVENT_BATTERY_CRITICAL;
         } else if (state == STATE_SHUTDOWN && event == STATE_EVENT_BUTTON_SHORT) {
             led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 2000);
