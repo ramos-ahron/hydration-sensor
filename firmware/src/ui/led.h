@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /**
- * @brief Defines the available LED colors.
+ * @brief LED colors.
  */
 typedef enum {
     LED_OFF = 0,
@@ -18,7 +18,7 @@ typedef enum {
 } led_color_e;
 
 /**
- * @brief Defines possible LED patterns
+ * @brief LED blink patterns.
  */
 typedef enum {
     LED_PAT_STEADY,
@@ -29,7 +29,7 @@ typedef enum {
 } led_pattern_e;
 
 /**
- * @brief Priority slots
+ * @brief LED priority slots. A slot with a lower number has a higher priority.
  */
 typedef enum {
     LED_PRIO_FAULT,

@@ -42,7 +42,7 @@ ZTEST(a_rms, test_gravity_offset_cancels)
 {
     const float a[4][3] = { { 1, 0, 9.81f }, { -1, 0, 9.81f }, { 1, 0, 9.81f }, { -1, 0, 9.81f } };
 
-    zassert_within(a_rms(a, 4), 1.0f, 1e-4f); /* the constant z offset drops out */
+    zassert_within(a_rms(a, 4), 1.0f, 1e-4f); /* the constant z offset cancels */
 }
 
 ZTEST(a_rms, test_three_axis)
@@ -93,7 +93,7 @@ ZTEST(sensor_io, test_override_is_copied)
     struct override o = { .accel_active = true, .a_rms = 2.0f };
 
     set_override(&o);
-    o.a_rms = 9.0f; /* changing the caller's copy has no effect */
+    o.a_rms = 9.0f; /* a change to the caller's copy has no effect */
     zassert_equal(get_motion(&rms), 0);
     zassert_within(rms, 2.0f, 1e-6f);
 }

@@ -7,16 +7,16 @@ Usage:
     python ble_decode.py --hex <hex>  # decode one 17-byte record from the device shell, no radio
     python ble_decode.py --selftest   # check parser, decoder and reassembly, no radio
 
-Live mode needs bleak, declared in pyproject.toml: run `uv run ble_decode.py` from this folder.
+Live mode needs bleak. pyproject.toml declares it. Run `uv run ble_decode.py` from this folder.
 The other modes use only the standard library.
 
 Where the layout comes from:
 
-    The field table and version come from src/ble/packet.h (the X() rows of PACKET_FIELDS and
-    PACKET_VERSION). Flag bits, reject names and status names come from src/hs/hs_types.h when
-    that file exists. Packet v2 has no flags or status field, so the file is optional. This
-    script has no field list of its own. The drawings below help the reader, but the header is
-    the source of truth.
+    The field table and the version come from src/ble/packet.h (the X() rows of PACKET_FIELDS
+    and PACKET_VERSION). The flag bits, reject names and status names come from
+    src/hs/hs_types.h when that file exists. Packet v2 has no flags or status field, so the file
+    is optional. This script has no field list of its own. The drawings below are for the
+    reader. The header is the source of truth.
 
 One fragment = one BLE notification (little-endian):
 
@@ -412,7 +412,7 @@ class Reassembler:
     def __init__(self):
         """Start with no record in progress and no dropped records."""
         self.parts = {}  # (session, sequence) -> (count, {index: payload})
-        self.dropped = 0  # incomplete records abandoned because a newer one started
+        self.dropped = 0  # incomplete records that the class abandoned for a newer record
 
     def feed(self, data):
         """Add one fragment.
@@ -483,9 +483,9 @@ async def run(name, count):
     The function scans for the device, pairs, subscribes to the record characteristic and
     prints one line for each record. It stops after count records or when the link drops.
 
-    If the link fails before the subscribe, the bonds on the two sides may not match (one side
-    lost its bond). The function then removes the host bond and tries again until a new
-    PAIRING window opens or REPAIR_WAIT_S is over.
+    If the link fails before the subscribe, the bonds on the two sides possibly do not match
+    (one side lost its bond). The function then removes the host bond. It tries again until a
+    new PAIRING window opens or REPAIR_WAIT_S is over.
 
     Args:
         name (str): Advertised device name to scan for.
@@ -559,9 +559,9 @@ async def run(name, count):
     async def session(device):
         """Connect, pair if needed, subscribe and receive until done is set.
 
-        The record CCC needs an encrypted link, so the client pairs first. Pairing is skipped
-        if the host is already bonded. The first bond needs the device's PAIRING window (long
-        press, blue SLOW).
+        The record CCC needs an encrypted link, so the client pairs first. The client does not
+        pair if the host already has a bond. The first bond needs the PAIRING window of the
+        device (long press, blue SLOW).
 
         Args:
             device (BLEDevice): Device from the scan.
@@ -603,8 +603,8 @@ async def run(name, count):
                      "settings, long-press the device, then run again.")
         print(f"Long-press the device to open pairing (blue SLOW). Trying for "
               f"{REPAIR_WAIT_S} s.", flush=True)
-        # A device with a bond advertises outside the window too, so one attempt can come too
-        # early. Try again until the window opens or the time is up.
+        # A device with a bond also advertises outside the window, so one attempt can be too
+        # early. Try again until the window opens or the time is over.
         loop = asyncio.get_running_loop()
         deadline = loop.time() + REPAIR_WAIT_S
         while why is not None and loop.time() < deadline:
@@ -858,7 +858,7 @@ def test_gaps():
     """Check that only a forward skip in the same session is a gap.
 
     The test also checks the smallest gap and a gap across the u16 wrap. It prints the GAP
-    messages that it finds, so the --selftest output stays the same as before.
+    messages that it finds, so that the --selftest output does not change.
 
     Raises:
         AssertionError: gap() found a gap that is not there, or missed one.
@@ -872,7 +872,7 @@ def test_gaps():
     assert gap({1: 10}, 1, 12) == "GAP: session 1 sequence 10 -> 12"
     assert gap({1: 65535}, 1, 1) == "GAP: session 1 sequence 65535 -> 1"
     assert gap({1: 65535}, 1, 0) is None
-    for message in messages:  # printed so --selftest output stays the same as before
+    for message in messages:  # print them so that the --selftest output does not change
         if message:
             print(message)
 

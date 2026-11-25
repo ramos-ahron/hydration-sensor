@@ -42,13 +42,13 @@ bool state_active_process_event(state_event_e event)
     }
 
     /**
-     * Every region sees the event. Order of priority:
+     * Every region gets the event, in this order:
      *  1. Measurement
      *  2. BLE
      */
     const bool measurement_busy = state_measurement_busy();
     bool consumed = false;
-    // TODO: check if busy pairing in addition
+    // TODO: Also check if BLE is busy with pairing.
     consumed |= state_measurement_process_event(event);
     consumed |= state_ble_process_event(event, measurement_busy);
     return consumed;
@@ -59,7 +59,7 @@ void state_active_run(state_e from)
     __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
     ARG_UNUSED(from);
 
-    // Initial substates: [*] --> BLE_IDLE, [*] --> M_IDLE
+    // Enter the initial substates: BLE_IDLE and M_IDLE.
     state_ble_run();
     battery_led();
     state_measurement_run();

@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 /**
- * @brief Calculates a_rms for a window of 3-axis samples
+ * @brief Calculates a_rms for a window of 3-axis samples.
  *
  * a_rms is the square root of the mean squared distance between each sample and the mean
  * sample. The function has no side effects.
@@ -60,8 +60,8 @@ int get_motion(float *rms);
  */
 int get_temp(int16_t *centi_c);
 
-// ----------------------------TEST---------------
-/** @brief Test overrides for the simulation scenarios and the shell */
+// Test hooks
+/** @brief Test overrides for the simulation scenarios and the shell. */
 struct override {
     bool accel_active;    /**< If true, get_motion() uses the two fields below. */
     bool accel_fault;     /**< If true, get_motion() returns -EIO. */

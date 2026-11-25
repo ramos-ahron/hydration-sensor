@@ -57,7 +57,7 @@ static void *setup(void)
 static void before(void *f)
 {
     ARG_UNUSED(f);
-    /* Back to OK from any level, no hardware VBUS on the bench either. */
+    /* Go back to OK from any level. Set VBUS to absent, because the bench has no hardware VBUS. */
     safety_set_batt_override(BATT_LOW_MV + BATT_MARGIN_MV);
     safety_set_vbus_override(0);
 }
@@ -100,7 +100,7 @@ ZTEST(safety, test_auto_restores_unknown)
     const int before = batt_events;
 
     safety_set_batt_override(-1);
-    /* The test boards have no battery ADC channel: unknown keeps the level. */
+    /* The test boards have no battery ADC channel. An unknown reading keeps the level. */
     zassert_true(battery_mv() < 0);
     zassert_equal(battery_level(), BATTERY_LEVEL_LOW);
     zassert_equal(batt_events, before);
@@ -122,7 +122,7 @@ ZTEST(safety, test_drive_watchdog_smoke)
 {
     safety_drive_feed();
     safety_drive_end();
-    /* Twice the channel count: a leak would exhaust the channels. */
+    /* Loop two times the channel count. If a call leaks a channel, the loop uses all channels. */
     for (int i = 0; i < 2 * CONFIG_TASK_WDT_CHANNELS; i++) {
         safety_drive_begin();
         safety_drive_begin();

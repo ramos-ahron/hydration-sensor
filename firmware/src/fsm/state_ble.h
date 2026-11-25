@@ -5,10 +5,9 @@
 #include <stdbool.h>
 
 /**
- * @brief Defines the substates of the BLE state machine.
+ * @brief Substates of the BLE state machine.
  *
- * Represents the BLE connection lifecycle, from idle and pairing to
- * connected or disconnected states.
+ * The substates follow the BLE link: idle, pairing, connected and disconnected.
  */
 typedef enum {
     BLE_STATE_BLE_IDLE,

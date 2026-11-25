@@ -175,8 +175,9 @@ int safety_init(void)
         LOG_WRN("task watchdog init failed (err %d); drive runs unguarded", err);
     }
     /*
-     * Arm the hardware fallback now. The nRF WDT keeps running across a soft reset and cannot
-     * be stopped, so it has to be fed from boot, not only from the first measurement.
+     * Arm the hardware fallback now. The nRF WDT continues to run after a soft reset, and
+     * nothing can stop it. Thus the firmware must feed it from boot, and not only from the
+     * first measurement.
      */
     safety_drive_begin();
     safety_drive_end();

@@ -97,7 +97,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             led_clear(LED_PRIO_FAULT);
             led_clear(LED_PRIO_STORAGE);
 
-            // Transitions
+            // Start the timers of the next transitions.
             if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_TIMER)) {
                 fsm_timer_start(FSM_TIMER_MEASURE, STATE_EVENT_TIMER_TRIGGER,
                                 CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
@@ -108,7 +108,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             if (!IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)) {
                 uint32_t guard_ms = SLEEP_GUARD_MS;
 
-                // Leave extra time to show the result LED after a measurement was stored
+                // After a stored measurement, add time so that the result LED stays visible.
                 if (from == MEASUREMENT_STATE_STORE_LOCAL) {
                     guard_ms += RESULT_DISPLAY_MS;
                 }
@@ -166,7 +166,7 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
         case MEASUREMENT_STATE_STORE_LOCAL:
             __ASSERT(from == MEASUREMENT_STATE_RESULT_READY, "STORE_LOCAL entered from %d", from);
 
-            // Every result is stored before it is sent. The BLE region sends unsent records.
+            // The function stores every result first. Then the BLE region sends unsent records.
             if (store_result() != 0) {
                 fsm_post(STATE_EVENT_WRITE_ERROR);
                 break;

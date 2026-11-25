@@ -2,7 +2,7 @@
 #define STATE_COMMON_H
 
 /**
- * @brief Defines the top-level states of the state machine.
+ * @brief Top-level states of the state machine.
  */
 typedef enum {
     STATE_INIT,
@@ -14,7 +14,7 @@ typedef enum {
 } state_e;
 
 /**
- * @brief Defines events that trigger state machine transitions.
+ * @brief Events that cause state machine transitions.
  */
 typedef enum {
     // Buttons

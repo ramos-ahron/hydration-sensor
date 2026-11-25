@@ -16,4 +16,4 @@
  */
 battery_level_e batt_classify(battery_level_e prev, int mv);
 
-#endif /* BATTERY_H */
+#endif  // BATTERY_H

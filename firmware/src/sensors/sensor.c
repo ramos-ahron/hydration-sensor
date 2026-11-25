@@ -88,8 +88,8 @@ int get_motion(float *rms)
             window[i][k] = sensor_value_to_float(&v[k]);
         }
     }
-    /* A stuck or disconnected sensor returns the same value for every sample. Real MEMS
-     * noise does not keep all three axes bit-identical for a full window. */
+    /* A stuck or disconnected sensor returns the same value for every sample. With real MEMS
+     * noise, the three axes do not stay bit-identical for a full window. */
     bool stuck = true;
     for (size_t i = 1; i < ACCEL_WINDOW_SAMPLES && stuck; i++) {
         stuck = memcmp(window[i], window[0], sizeof(window[0])) == 0;
@@ -120,7 +120,7 @@ int get_temp(int16_t *centi_c)
         return -EIO;
     }
     /* v.val1 is the integer part in C. v.val2 is the fraction in millionths of 1 C.
-     * Adding +/-5000 before the division rounds to the nearest 0.01 C. */
+     * The +/-5000 before the division rounds to the nearest 0.01 C. */
     int32_t cc = v.val1 * 100 + (v.val2 + (v.val2 >= 0 ? 5000 : -5000)) / 10000;
     if (cc <= INT16_MIN || cc > INT16_MAX) {
         return -EIO;
@@ -140,7 +140,7 @@ void set_override(const struct override *o)
 
 #ifdef CONFIG_SHELL
 /**
- * @brief "hs ctx": reads both context sensors one time and prints the results.
+ * @brief Shell command "hs ctx". Read both context sensors one time and print the results.
  *
  * The command blocks for the motion window if the accelerometer override is not active.
  * It prints a_rms as an integer in mm/s^2, so the output needs no float support in printf.

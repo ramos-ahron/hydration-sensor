@@ -7,10 +7,10 @@
 #include "ui/led.h"
 
 /**
- * @brief Provides string representations of enums for logging.
+ * @brief Enum names for the log.
  *
- * When CONFIG_FSM_ENUM_STRINGS is disabled, the conversion functions
- * are replaced with inline stubs that return an empty string.
+ * When CONFIG_FSM_ENUM_STRINGS is off, macros replace the conversion functions with an inline
+ * stub that returns an empty string.
  */
 #ifndef CONFIG_FSM_ENUM_STRINGS
 

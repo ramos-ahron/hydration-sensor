@@ -3,10 +3,10 @@
 
 #include "fsm/state_common.h"
 
-// TODO: Add a shutdown prep?
+// TODO: Decide if SHUTDOWN needs a preparation state.
 
 /**
- * @brief Run the system shutdown state.
+ * @brief Enter the shutdown state.
  *
  * @param[in] from  Previous state.
  */

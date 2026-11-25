@@ -24,7 +24,7 @@ static const struct ble_transition ble_transitions[] = {
     { BLE_STATE_PAIRING, STATE_EVENT_CONNECTION_COMPLETE, BLE_STATE_CONNECTED },
     { BLE_STATE_PAIRING, STATE_EVENT_PAIRING_TIMEOUT, BLE_STATE_BLE_IDLE },
     { BLE_STATE_CONNECTED, STATE_EVENT_BUTTON_LONG, BLE_STATE_BLE_IDLE },
-    // TODO: Is disconnected needed
+    // TODO: Decide if the DISCONNECTED state is necessary.
     { BLE_STATE_CONNECTED, STATE_EVENT_LINK_LOST, BLE_STATE_DISCONNECTED },
     { BLE_STATE_DISCONNECTED, STATE_EVENT_BLE_IDLE, BLE_STATE_BLE_IDLE },
 };
@@ -44,9 +44,9 @@ static struct packet tx_rec;
 /**
  * @brief Post TX_KICK to the state machine when the tx_retry delay expires.
  *
- * The system work queue calls this function. It only posts the event.
+ * The system work queue calls this function. The function only posts the event.
  *
- * @param[in] work  Work item, UNUSED.
+ * @param[in] work  Work item. The function does not use this value.
  */
 static void tx_retry_fn(struct k_work *work)
 {
@@ -142,8 +142,8 @@ static void send_frags(void)
  *
  * Only one record is in flight at a time. When the log has no unsent record, or the record does
  * not parse, the function clears sync_sending and sends nothing. The record stays unsent in the
- * log until the TX_DONE handler marks it sent. Thus if the link goes down, the record is
- * sent again after the next connection.
+ * log until the TX_DONE handler marks it sent. Thus if the link goes down, the BLE region sends
+ * the record again after the next connection.
  */
 static void send_next_unsent(void)
 {
@@ -162,7 +162,7 @@ bool state_ble_pairing(void)
 
 bool state_ble_process_event(state_event_e event, bool measurement_busy)
 {
-    // Ensure measurement is not busy before transitioning
+    // Ignore BUTTON_LONG while a measurement is busy.
     if (event == STATE_EVENT_BUTTON_LONG && measurement_busy) {
         return false;
     }

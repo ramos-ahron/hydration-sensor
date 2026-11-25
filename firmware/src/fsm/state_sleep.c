@@ -3,7 +3,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-// Todo: change sleep interval as necessary
+// TODO: Tune the interval of the sleep beat.
 #define SLEEP_BEAT_MS 4000
 
 void state_sleep_run(state_e from)
@@ -12,8 +12,8 @@ void state_sleep_run(state_e from)
     ARG_UNUSED(from);
 
     /**
-     * System ON idle: main loop blocks and kernel idles
-     * short: wakes to INIT. Battery check handles shutdown
+     * System ON idle: the main loop waits and the kernel idles. A short press wakes the device
+     * to INIT. The battery check handles the shutdown.
      */
     led_request(LED_PRIO_POWER, LED_WHITE, LED_PAT_BEAT, SLEEP_BEAT_MS, 0);
 }

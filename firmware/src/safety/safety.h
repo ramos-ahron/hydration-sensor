@@ -71,7 +71,7 @@ bool safety_reset_was_watchdog(void);
 int battery_mv(void);
 
 /**
- * @brief Get the battery level
+ * @brief Get the battery level.
  *
  * @return The current battery level.
  */

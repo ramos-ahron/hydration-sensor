@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 /** Largest notification payload that the stack can send: ATT MTU - 3. */
 #define FRAG_MAX (CONFIG_BT_L2CAP_TX_MTU - 3)
 
-/** Set static UUIDs TODO: should this be dynamic? */
+/** Static 128-bit UUIDs of the service and the record. TODO: Decide if the UUIDs must change. */
 #define SVC_UUID_VAL    BT_UUID_128_ENCODE(0x3f6c0001, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 #define RECORD_UUID_VAL BT_UUID_128_ENCODE(0x3f6c0002, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 
@@ -45,7 +45,7 @@ static const struct bt_data sd[] = {
 };
 
 /**
- * @brief Defines the advertising that the FSM asked for.
+ * @brief Advertising mode that the FSM requested.
  *
  * recycled() starts this advertising again when the stack frees a connection object.
  */
@@ -261,7 +261,8 @@ static enum bt_security_err pairing_accept(struct bt_conn *conn,
     return BT_SECURITY_ERR_SUCCESS;
 }
 
-/* No display and no keyboard callbacks: NoInputNoOutput, so LE Secure Connections Just Works. */
+/* There are no display or keyboard callbacks. Thus the device is NoInputNoOutput and LE Secure
+ * Connections uses Just Works. */
 static const struct bt_conn_auth_cb auth_cb = {
     .pairing_accept = pairing_accept,
 };
@@ -382,8 +383,8 @@ void ble_disconnect(void)
  *
  * @param[in] conn  Link to check. Can be NULL.
  *
- * @return true when @p conn is the current link, is encrypted and its central turned
- *         notifications on, and false when it does not.
+ * @return true when @p conn is the current link, the link is encrypted and its central turned
+ *         notifications on, and false when one of these is not true.
  */
 static bool subscribed(struct bt_conn *conn)
 {
@@ -401,7 +402,7 @@ bool ble_subscribed(void)
 /**
  * @brief Post TX_DONE when the stack sent the last fragment of a packet.
  *
- * The BT host calls this function. It only posts the event.
+ * The BT host calls this function. The function only posts the event.
  *
  * @param[in] conn       Link. The function does not use this value.
  * @param[in] user_data  The function does not use this value.

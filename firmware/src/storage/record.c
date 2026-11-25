@@ -79,7 +79,7 @@ static int set_cb(const char *key, size_t len, settings_read_cb read_cb, void *a
         return read_cb(arg, &m, sizeof(m)) < 0 ? -EIO : 0;
     }
 
-    // Read keys
+    // Read the slot keys "r/<slot>".
     if (settings_name_steq(key, "r", &next) && next) {
         unsigned long s = strtoul(next, NULL, 10);
         uint8_t hdr[HDR];
@@ -244,7 +244,8 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id)
         if (nm.count < SLOTS) {
             nm.count++;
         }
-        // record first, meta second so a power cut never leaves meta pointing at nothing
+        // Write the record first and the metadata second. Then a power cut cannot leave
+        // metadata that points to a missing record.
         rc = wr_slot(m.next_id, sent, rec, len);
         if (!rc) {
             rc = wr_meta(&nm);
@@ -411,7 +412,7 @@ int record_clear(void)
 
 #ifdef CONFIG_SHELL
 /**
- * @brief "hs store list [n]": prints the newest @p n records, newest first.
+ * @brief Shell command "hs store list [n]". Print the newest @p n records, newest first.
  *
  * The default for @p n is 5. Each line shows the ID, the sent flag, the size, and the
  * record bytes in hexadecimal. The list stops early if the log holds fewer records.
@@ -445,7 +446,7 @@ static int cmd_list(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
- * @brief "hs store stat": prints the log counters.
+ * @brief Shell command "hs store stat". Print the log counters.
  *
  * The counters are the record count, the unsent count, the lost count, the session ID,
  * and the number of slots.
@@ -464,7 +465,7 @@ static int cmd_stat(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
- * @brief "hs store clear": deletes all records. See record_clear().
+ * @brief Shell command "hs store clear". Delete all records. See record_clear().
  *
  * @param[in] sh    Shell that received the command. The function does not use this value.
  * @param[in] argc  Number of arguments. The function does not use this value.
@@ -479,7 +480,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
- * @brief "hs store fault <0|1>": sets the test fault. See record_inject_fault().
+ * @brief Shell command "hs store fault <0|1>". Set the test fault. See record_inject_fault().
  *
  * A number other than 0 makes record_put() fail with -EIO. 0 stops the fault. A value
  * that is not a number counts as 0.

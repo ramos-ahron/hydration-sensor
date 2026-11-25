@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 /**
- * @brief Defines the states of the measurement state machine.
+ * @brief Substates of the measurement state machine.
  */
 typedef enum {
     MEASUREMENT_STATE_M_IDLE,
@@ -18,7 +18,7 @@ typedef enum {
 } measurement_state_e;
 
 /**
- * @brief Initialize the measurement state machine.
+ * @brief Enter the initial substate of the measurement state machine.
  */
 void state_measurement_run(void);
 
@@ -32,7 +32,7 @@ void state_measurement_run(void);
 bool state_measurement_process_event(state_event_e event);
 
 /**
- * @brief Check if a measurement operation is in progress.
+ * @brief Check if a measurement is in progress.
  *
  * @return true when the measurement state machine is busy, and false when it is not.
  */

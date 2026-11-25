@@ -15,14 +15,13 @@
 LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
 
 /**
- * @brief Defines the event-driven state machine message queue.
+ * @brief Message queue of the state machine.
  *
- * Events are posted to @c fsm_msgq by button callbacks, timers, or state
- * logic. The main loop blocks on the queue and passes received events to
- * state_machine_process_event(), which looks up the transition and enters
- * the resulting state.
+ * Button callbacks, timers and state logic post events to @c fsm_msgq. The main loop waits on
+ * the queue and gives each event to state_machine_process_event(). That function finds the
+ * transition and enters the new state.
  *
- * @note The queue holds up to 16 events, each of type @c state_event_e.
+ * @note The queue holds a maximum of 16 events. Each event is a @c state_event_e.
  */
 K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 16, 4);
 
@@ -71,15 +70,16 @@ void fsm_post(state_event_e event)
  */
 static void timer_handler(struct k_work *work)
 {
-    // TODO: Restarting a timer as it expires can post the new event early. Cancel before restart.
+    // TODO: A timer restart at the time of expiry can post the new event early. Cancel the
+    // timer before the restart.
 
     /**
-     * Given a pointer to a member of the struct. It gives back the pointer to the struct.
+     * CONTAINER_OF() gets the timer slot from the pointer to its dwork member.
      */
     const struct fsm_timer_slot *slot =
         CONTAINER_OF(k_work_delayable_from_work(work), struct fsm_timer_slot, dwork);
 
-    // Post the event tied to the expired timer.
+    // Post the event of the timer that expired.
     fsm_post(slot->event);
 }
 
@@ -97,9 +97,9 @@ void fsm_timer_stop(fsm_timer_e timer)
 /**
  * @brief Make a top-level state transition.
  *
- * When @p from and @p to are the same, the function does nothing. Otherwise, the function logs
- * the transition, stops every timer and clears ever LED request of the state being left,
- * stores @p to as the current state. Then it calls the run function of the new state with @p from.
+ * The function logs the transition and stores @p to as the current state. Then it stops every
+ * timer and clears every LED request of the old state. Then it calls the run function of the new
+ * state with @p from. The function does these steps also when @p from and @p to are the same.
  *
  * @param[in] from   State that the machine leaves.
  * @param[in] event  Event that caused the transition. Only the log uses this value.
@@ -111,7 +111,7 @@ static void state_enter(state_e from, state_event_e event, state_e to)
             state_event_to_string(event));
     state = to;
 
-    // Clear timers and configurations
+    // Stop all timers and clear all LED requests.
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
         fsm_timer_stop(i);
     }

@@ -8,12 +8,12 @@
 /** Maximum size of one record, in bytes. */
 #define RECORD_MAX_LEN 64
 
-// TODO: add uptime time to record and ble
+// TODO: Add the uptime to the record and to the BLE packet.
 
 /**
  * @brief Starts the log.
  *
- * Reads the saved state and adds 1 to the boot counter.
+ * The function reads the saved state and adds 1 to the boot counter.
  *
  * @retval 0 on success
  * @retval -EIO the saved state cannot be written
@@ -39,7 +39,7 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id);
 /**
  * @brief Gives the ID that the next record gets.
  *
- * Use the ID to put it in the record before the record is stored. Only one thread may call
+ * Put this ID into the record before you store the record. Only one thread may call
  * record_put().
  *
  * @return ID that the next successful record_put() returns.
