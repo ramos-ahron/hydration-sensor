@@ -161,10 +161,13 @@ void state_machine_process_event(state_event_e event)
         if ((state == STATE_INIT || state == STATE_ACTIVE || state == STATE_SLEEP)
             && battery_level() == BATTERY_LEVEL_CRITICAL) {
             event = STATE_EVENT_BATTERY_CRITICAL;
-        } else if (state == STATE_SHUTDOWN && event == STATE_EVENT_BUTTON_SHORT) {
-            led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 2000);
-            return;
+        } else if (state == STATE_SHUTDOWN && battery_level() != BATTERY_LEVEL_CRITICAL) {
+            event = STATE_EVENT_BATTERY_MARGIN_OK;
         }
+    } else if (state == STATE_SHUTDOWN && event == STATE_EVENT_BUTTON_SHORT) {
+        // Show the user that the device is off because of the battery.
+        led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 2000);
+        return;
     }
 
     if (state == STATE_ACTIVE && state_active_process_event(event)) {
