@@ -162,7 +162,7 @@ static void led_update(void)
     for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
         (void)gpio_pin_set_dt(&leds[i], (cur_color >> i) & 1);
     }
-#endif
+#endif  // LED_HAVE_PINS
     if (next == LED_NEVER) {
         k_work_cancel_delayable(&led_work);
 
@@ -261,4 +261,4 @@ static int led_init(void)
     return 0;
 }
 SYS_INIT(led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
-#endif
+#endif  // LED_HAVE_PINS

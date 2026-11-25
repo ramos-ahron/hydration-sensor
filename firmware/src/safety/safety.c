@@ -14,7 +14,7 @@
 
 #if defined(CONFIG_HAS_NRFX)
 #include <hal/nrf_power.h>
-#endif
+#endif  // defined(CONFIG_HAS_NRFX)
 
 LOG_MODULE_REGISTER(safety, LOG_LEVEL_INF);
 
@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(safety, LOG_LEVEL_INF);
 #define HAS_BATT_ADC 1
 static const struct adc_dt_spec batt_adc = ADC_DT_SPEC_GET(DT_PATH(zephyr_user));
 static bool batt_adc_ok;
-#endif
+#endif  // DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 
 static bool inited;
 static bool reset_read;
@@ -83,7 +83,7 @@ static int batt_read_hw(void)
     return mv < 0 ? 0 : mv;
 #else
     return BATT_UNKNOWN;
-#endif
+#endif  // HAS_BATT_ADC
 }
 
 /**
@@ -165,7 +165,7 @@ int safety_init(void)
     if (hw_wdt != NULL && !device_is_ready(hw_wdt)) {
         hw_wdt = NULL;
     }
-#endif
+#endif  // defined(CONFIG_TASK_WDT_HW_FALLBACK) && defined(CONFIG_WATCHDOG)
     err = task_wdt_init(hw_wdt);
     wdt_ok = err == 0;
     if (!wdt_ok) {
@@ -186,7 +186,7 @@ int safety_init(void)
     }
 #else
     LOG_WRN("no battery ADC channel");
-#endif
+#endif  // HAS_BATT_ADC
 
     batt_evaluate(false);
     (void)k_work_schedule(&batt_work, K_MSEC(BATTERY_PERIOD_MS));
@@ -202,7 +202,7 @@ bool safety_vbus_present(void)
     return nrf_power_usbregstatus_vbusdet_get(NRF_POWER);
 #else
     return false;
-#endif
+#endif  // defined(NRF_POWER) && NRF_POWER_HAS_USBREG
 }
 
 int safety_check(void)

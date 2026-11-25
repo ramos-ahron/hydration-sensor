@@ -85,6 +85,6 @@ const char *measurement_state_to_string(measurement_state_e state);
  */
 const char *ble_state_to_string(ble_state_e state);
 
-#endif
+#endif  // CONFIG_FSM_ENUM_STRINGS
 
 #endif  // ENUM_TO_STRING_H
