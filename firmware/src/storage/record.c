@@ -11,8 +11,10 @@
 
 LOG_MODULE_REGISTER(record, LOG_LEVEL_INF);
 
-#define SLOTS CONFIG_RECORD_SLOTS
-#define HDR   2
+#define SLOTS        CONFIG_RECORD_SLOTS
+#define HDR          2
+#define SLOT_KEY_LEN 16
+#define SLOT_BUF_LEN (HDR + RECORD_MAX_LEN)
 
 struct meta {
     uint16_t next_id;
@@ -99,12 +101,12 @@ SETTINGS_STATIC_HANDLER_DEFINE(hs, "hs", NULL, set_cb, NULL, NULL);
  * The slot number is @p id modulo SLOTS. For example, with 64 slots, ID 70 gives
  * "hs/r/6".
  *
- * @param[out] key  Receives the key. Must hold 16 bytes.
+ * @param[out] key  Receives the key. Must hold SLOT_KEY_LEN bytes.
  * @param[in]  id   Record ID.
  */
-static void slot_key(char *key, uint16_t id)
+static void slot_key(char key[SLOT_KEY_LEN], uint16_t id)
 {
-    snprintf(key, 16, "hs/r/%u", id % SLOTS);
+    snprintf(key, SLOT_KEY_LEN, "hs/r/%u", id % SLOTS);
 }
 
 /**
@@ -116,14 +118,14 @@ static void slot_key(char *key, uint16_t id)
  * @param[in]  len      Size of the saved value in bytes. This function does not use it.
  * @param[in]  read_cb  Function that copies bytes of the saved value into a buffer.
  * @param[in]  arg      Value to give to @p read_cb. Do not change it.
- * @param[out] param    Buffer that receives the value. Must hold HDR + RECORD_MAX_LEN bytes.
+ * @param[out] param    Buffer that receives the value. Must hold SLOT_BUF_LEN bytes.
  *
  * @retval 1     The value is copied. The load stops.
  * @retval -EIO  The read failed.
  */
 static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *arg, void *param)
 {
-    return read_cb(arg, param, HDR + RECORD_MAX_LEN) < 0 ? -EIO : 1;
+    return read_cb(arg, param, SLOT_BUF_LEN) < 0 ? -EIO : 1;
 }
 
 /**
@@ -132,14 +134,14 @@ static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *ar
  * The value is the 2-byte header and then the record bytes. See set_cb() for the layout.
  *
  * @param[in]  id   Record ID.
- * @param[out] buf  Receives the slot value. Must hold HDR + RECORD_MAX_LEN bytes.
+ * @param[out] buf  Receives the slot value. Must hold SLOT_BUF_LEN bytes.
  *
  * @retval 0     The load completed. If the key is not in flash, @p buf does not change.
  * @retval -EIO  The load failed.
  */
 static int rd_slot(uint16_t id, uint8_t *buf)
 {
-    char key[16];
+    char key[SLOT_KEY_LEN];
 
     slot_key(key, id);
     return settings_load_subtree_direct(key, rd_cb, buf) ? -EIO : 0;
@@ -161,8 +163,8 @@ static int rd_slot(uint16_t id, uint8_t *buf)
  */
 static int wr_slot(uint16_t id, bool sent, const uint8_t *rec, size_t len)
 {
-    uint8_t buf[HDR + RECORD_MAX_LEN] = { sent, len };
-    char key[16];
+    uint8_t buf[SLOT_BUF_LEN] = { sent, len };
+    char key[SLOT_KEY_LEN];
 
     memcpy(buf + HDR, rec, len);
     slot_key(key, id);
@@ -278,7 +280,7 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id)
  */
 static int out(uint16_t id, uint8_t *rec, size_t *len, bool *sent)
 {
-    uint8_t buf[HDR + RECORD_MAX_LEN];
+    uint8_t buf[SLOT_BUF_LEN];
     int rc = rd_slot(id, buf);
 
     if (!rc) {
@@ -313,7 +315,7 @@ int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id)
 
 int record_mark_sent(uint16_t id)
 {
-    uint8_t buf[HDR + RECORD_MAX_LEN];
+    uint8_t buf[SLOT_BUF_LEN];
     int rc = -ENOENT;
 
     k_mutex_lock(&lock, K_FOREVER);
@@ -387,7 +389,7 @@ void record_inject_fault(bool on)
 int record_clear(void)
 {
     struct meta nm;
-    char key[16];
+    char key[SLOT_KEY_LEN];
     int rc = 0;
 
     k_mutex_lock(&lock, K_FOREVER);
