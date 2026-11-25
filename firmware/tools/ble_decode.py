@@ -60,6 +60,8 @@ TYPES_HEADER = SRC_DIR / "hs/hs_types.h"
 
 DEVICE_NAME = "Hydration"  # CONFIG_BT_DEVICE_NAME in prj.conf
 RECORD_UUID = "3f6c0002-8a4e-4b5d-9c2a-6e1f0b7d4a21"  # RECORD_UUID_VAL in ble_service.c
+REPAIR_WAIT_S = 60  # time to wait for a new PAIRING window after a host unpair
+REPAIR_RETRY_S = 2  # pause between pairing attempts in that time
 
 FRAGMENT_HEADER = struct.Struct("<HHBB")
 
@@ -268,7 +270,8 @@ def decode(fields, data):
         raw[field.name] = value
     want = record_crc(data[:-2])
     if raw["record_crc16"] != want:
-        raise ValueError(f"CRC mismatch: record has 0x{raw['record_crc16']:04x}, computed 0x{want:04x}")
+        raise ValueError(f"CRC mismatch: record has 0x{raw['record_crc16']:04x}, "
+                         f"computed 0x{want:04x}")
     return raw
 
 
@@ -480,12 +483,17 @@ async def run(name, count):
     The function scans for the device, pairs, subscribes to the record characteristic and
     prints one line for each record. It stops after count records or when the link drops.
 
+    If the link fails before the subscribe, the bonds on the two sides may not match (one side
+    lost its bond). The function then removes the host bond and tries again until a new
+    PAIRING window opens or REPAIR_WAIT_S is over.
+
     Args:
         name (str): Advertised device name to scan for.
         count (int): Number of records to receive. 0 means no limit.
 
     Raises:
-        SystemExit: No device has the name, the subscribe failed, or the link dropped before
+        SystemExit: No device has the name, the subscribe failed after the retry, the host
+            unpair failed, or the link dropped before
             count records arrived (exit code 1).
     """
     from bleak import BleakClient, BleakScanner
@@ -536,25 +544,79 @@ async def run(name, count):
         if count and received >= count:
             done.set()
 
+    live = False  # True while a session is subscribed
+
     def on_disconnect(_):
         """Stop the session when the device drops the link.
 
         Args:
             _: The client. Not used.
         """
-        print("link dropped by the device", flush=True)
+        if live and not done.is_set():  # done is already set when count ended the session
+            print("link dropped by the device", flush=True)
         done.set()
 
-    # The record CCC needs an encrypted link, so pair first. Skipped if already bonded; the
-    # first bond needs the device's PAIRING window (long press, blue SLOW).
-    async with BleakClient(device, disconnected_callback=on_disconnect, pair=True) as client:
-        print(f"connected, MTU {client.mtu_size}")
+    async def session(device):
+        """Connect, pair if needed, subscribe and receive until done is set.
+
+        The record CCC needs an encrypted link, so the client pairs first. Pairing is skipped
+        if the host is already bonded. The first bond needs the device's PAIRING window (long
+        press, blue SLOW).
+
+        Args:
+            device (BLEDevice): Device from the scan.
+
+        Returns:
+            str | None: None after a session that subscribed. Else the reason that the link
+                failed before notifications were on.
+        """
+        nonlocal live
+        done.clear()
         try:
-            await client.start_notify(RECORD_UUID, on_notify)
-        except BleakError as e:
-            sys.exit(f"subscribe failed ({e}). Not bonded? Long-press the device to open "
-                     "pairing, then run again.")
-        await done.wait()
+            async with BleakClient(device, disconnected_callback=on_disconnect,
+                                   pair=True) as client:
+                await client.start_notify(RECORD_UUID, on_notify)
+                live = True
+                print(f"connected, MTU {client.mtu_size}", flush=True)
+                await done.wait()
+        except (BleakError, asyncio.TimeoutError, OSError) as e:
+            if live:
+                raise
+            return str(e) or type(e).__name__
+        finally:
+            live = False
+        return None
+
+    why = await session(device)
+    if why is not None:
+        # The bonds on the two sides do not match. Two cases:
+        # - The device lost its bond (for example after an erase). The host encrypts with its
+        #   old key, the device has no key to match, and the host never pairs again by itself.
+        # - The host lost its bond. The device refuses pairing outside the PAIRING window.
+        # Both recover with no host bond and a pairing in a new PAIRING window.
+        print(f"connect failed ({why}). The bonds on the host and the device do not match. "
+              "Removing the host bond.", flush=True)
+        try:
+            await BleakClient(device).unpair()
+        except (BleakError, NotImplementedError, OSError) as e:
+            sys.exit(f"unpair failed ({e}). Remove the device in the host Bluetooth "
+                     "settings, long-press the device, then run again.")
+        print(f"Long-press the device to open pairing (blue SLOW). Trying for "
+              f"{REPAIR_WAIT_S} s.", flush=True)
+        # A device with a bond advertises outside the window too, so one attempt can come too
+        # early. Try again until the window opens or the time is up.
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + REPAIR_WAIT_S
+        while why is not None and loop.time() < deadline:
+            await asyncio.sleep(REPAIR_RETRY_S)
+            found = await BleakScanner.find_device_by_name(
+                name, timeout=max(1.0, deadline - loop.time()))
+            if found is not None:
+                why = await session(found)
+        if why is not None:
+            sys.exit(f"pairing failed ({why}). If the device still refuses, run "
+                     "'hs ble unpair' on the device shell, long-press the device, then run "
+                     "again.")
     print(f"disconnected after {received} records, {gaps} sequence gaps, "
           f"{reassembler.dropped} dropped partials, {bad} bad")
     if count and received < count:

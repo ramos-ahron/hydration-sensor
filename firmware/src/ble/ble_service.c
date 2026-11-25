@@ -21,17 +21,18 @@ LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 #define SVC_UUID_VAL    BT_UUID_128_ENCODE(0x3f6c0001, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 #define RECORD_UUID_VAL BT_UUID_128_ENCODE(0x3f6c0002, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 
-static void ccc_changed(const struct bt_gatt_attr *attr, uint16_t value);
+static ssize_t ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value);
 
 /* A write to the CCC needs an encrypted link. Thus a central must pair before it subscribes. */
 BT_GATT_SERVICE_DEFINE(hydration_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_128(SVC_UUID_VAL)),
                        BT_GATT_CHARACTERISTIC(BT_UUID_DECLARE_128(RECORD_UUID_VAL),
                                               BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, NULL, NULL,
                                               NULL),
-                       BT_GATT_CCC(ccc_changed,
-                                   BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT));
+                       BT_GATT_CCC_WITH_WRITE_CB(NULL, ccc_write,
+                                                 BT_GATT_PERM_READ_ENCRYPT
+                                                     | BT_GATT_PERM_WRITE_ENCRYPT));
 
-/** Characteristic declaration of the record. The notify and subscribe calls use it. */
+/** Characteristic declaration of the record. The notify call uses it. */
 #define RECORD_ATTR (&hydration_svc.attrs[1])
 
 static const struct bt_data ad[] = {
@@ -55,6 +56,7 @@ typedef enum {
 } adv_mode_e;
 
 static struct bt_conn *current_conn;
+static volatile bool ccc_notify;
 static volatile adv_mode_e adv_mode;
 static volatile bool pairing_open;
 static bool ready;
@@ -147,18 +149,28 @@ static size_t bond_count(void)
 }
 
 /**
- * @brief Post BLE_SUBSCRIBED when the record CCC turns on notifications.
+ * @brief Post BLE_SUBSCRIBED when the central writes the record CCC with notify on.
  *
+ * The stack calls this function for every CCC write, also when the value does not change. It
+ * does not call it when it restores the stored CCC of a bonded peer.
+ *
+ * @param[in] conn   Link that wrote the CCC.
  * @param[in] attr   CCC attribute. The function does not use this value.
- * @param[in] value  New CCC value.
+ * @param[in] value  Written CCC value.
+ *
+ * @return sizeof(value), to accept the write.
  */
-static void ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static ssize_t ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value)
 {
     ARG_UNUSED(attr);
-    LOG_INF("Notifications %s", (value & BT_GATT_CCC_NOTIFY) ? "on" : "off");
-    if (value & BT_GATT_CCC_NOTIFY) {
-        fsm_post(STATE_EVENT_BLE_SUBSCRIBED);
+    if (conn == current_conn) {
+        ccc_notify = (value & BT_GATT_CCC_NOTIFY) != 0;
+        LOG_INF("Notifications %s", ccc_notify ? "on" : "off");
+        if (ccc_notify) {
+            fsm_post(STATE_EVENT_BLE_SUBSCRIBED);
+        }
     }
+    return sizeof(value);
 }
 
 /**
@@ -184,6 +196,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
     }
     // The stack stopped connectable advertising when the central connected.
     adv_mode = ADV_OFF;
+    ccc_notify = false;
     current_conn = bt_conn_ref(conn);
     LOG_INF("Connected, ATT MTU %u", bt_gatt_get_mtu(conn));
     fsm_post(STATE_EVENT_CONNECTION_COMPLETE);
@@ -205,6 +218,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     }
     bt_conn_unref(current_conn);
     current_conn = NULL;
+    ccc_notify = false;
     fsm_post(STATE_EVENT_LINK_LOST);
 }
 
@@ -273,7 +287,8 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
     ARG_UNUSED(conn);
-    LOG_WRN("Pairing failed (%s)", bt_security_err_to_str(reason));
+    // bt_security_err_to_str() returns "" without CONFIG_BT_SECURITY_ERR_TO_STR. Log the code too.
+    LOG_WRN("Pairing failed (err %d %s)", reason, bt_security_err_to_str(reason));
 }
 
 static struct bt_conn_auth_info_cb auth_info_cb = {
@@ -362,18 +377,20 @@ void ble_disconnect(void)
 /**
  * @brief Check if a link can receive packets.
  *
- * The stored CCC of a bonded peer can read as subscribed before the link is encrypted again.
- * Thus the function also checks the security level. Packets go out on an encrypted link only.
+ * A stored CCC of a bonded peer does not count. The central must write the CCC on this link
+ * (ccc_notify). Packets go out on an encrypted link only.
  *
  * @param[in] conn  Link to check. Can be NULL.
  *
- * @return true when @p conn is encrypted and has notifications on, and false when it does not.
+ * @return true when @p conn is the current link, is encrypted and its central turned
+ *         notifications on, and false when it does not.
  */
 static bool subscribed(struct bt_conn *conn)
 {
     return conn
-           && bt_conn_get_security(conn) >= BT_SECURITY_L2
-           && bt_gatt_is_subscribed(conn, RECORD_ATTR, BT_GATT_CCC_NOTIFY);
+           && conn == current_conn
+           && ccc_notify
+           && bt_conn_get_security(conn) >= BT_SECURITY_L2;
 }
 
 bool ble_subscribed(void)
