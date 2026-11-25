@@ -12,9 +12,10 @@ The other modes use only the standard library.
 
 Where the layout comes from:
 
-    The field table and the version come from src/ble/packet.h (the X() rows of PACKET_FIELDS
-    and PACKET_VERSION). This script has no field list of its own. The drawings below are for
-    the reader. The header is the source of truth.
+    The field table, the version, the CRC seed and the fragment header length come from
+    src/ble/packet.h (PACKET_FIELDS, PACKET_VERSION, PACKET_CRC_INIT and PACKET_FRAG_HDR_LEN).
+    This script has no field list of its own. The drawings below are for the reader. The
+    header is the source of truth.
 
 One fragment = one BLE notification (little-endian):
 
@@ -51,6 +52,7 @@ import pathlib
 import re
 import struct
 import sys
+import tempfile
 
 SRC_DIR = pathlib.Path(__file__).resolve().parent.parent / "src"
 RECORD_HEADER = SRC_DIR / "ble/packet.h"
@@ -60,6 +62,8 @@ RECORD_UUID = "3f6c0002-8a4e-4b5d-9c2a-6e1f0b7d4a21"  # RECORD_UUID_VAL in ble_s
 REPAIR_WAIT_S = 60  # time to wait for a new PAIRING window after a host unpair
 REPAIR_RETRY_S = 2  # pause between pairing attempts in that time
 
+# Fragment header: session_id, sequence, index, count. load_table() checks its size against
+# PACKET_FRAG_HDR_LEN in packet.h.
 FRAGMENT_HEADER = struct.Struct("<HHBB")
 
 # Wire type in the header -> struct format character (all little-endian).
@@ -70,8 +74,6 @@ WIRE_FORMAT = {"u8": "B", "u16": "H", "i16": "h", "u32": "I"}
 FIELD_ROW = re.compile(
     r'^\s*X\((\w+),\s*(\w+),\s*(-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?),\s*"([^"]*)"\)\s*\\?\s*$'
 )
-
-CRC_SEED = 0xFFFF  # PACKET_CRC_INIT
 
 # Value that means "not available" in any i16 field.
 NA_I16 = -32768
@@ -97,30 +99,51 @@ class Field:
     unit: str
 
 
+@dataclasses.dataclass(frozen=True)
+class Table:
+    """The packet layout from packet.h.
+
+    Attributes:
+        version (int): PACKET_VERSION.
+        fields (list[Field]): The X() rows of PACKET_FIELDS, in wire order.
+        crc_seed (int): PACKET_CRC_INIT, the seed of the record CRC.
+    """
+
+    version: int
+    fields: list
+    crc_seed: int
+
+
 def load_table(path=RECORD_HEADER):
-    """Read the record version and the field table from the firmware header.
+    """Read the packet layout from the firmware header.
 
     Args:
         path (pathlib.Path, optional): Header to read. Defaults to RECORD_HEADER.
 
     Returns:
-        tuple[int, list[Field]]: PACKET_VERSION and the fields in wire order.
+        Table: The version, the fields in wire order and the CRC seed.
 
     Raises:
         OSError: The header cannot be read.
-        SystemExit: The header has no PACKET_VERSION or no X() rows.
+        SystemExit: The header has no PACKET_VERSION, PACKET_CRC_INIT, PACKET_FRAG_HDR_LEN or
+            X() rows, or PACKET_FRAG_HDR_LEN is not the size of FRAGMENT_HEADER.
     """
     text = path.read_text()
-    version = re.search(r"#define PACKET_VERSION (\d+)", text)
+    version = re.search(r"#define PACKET_VERSION\s+(\d+)", text)
+    crc_seed = re.search(r"#define PACKET_CRC_INIT\s+(0x[0-9A-Fa-f]+)u?\b", text)
+    frag_hdr_len = re.search(r"#define PACKET_FRAG_HDR_LEN\s+(\d+)", text)
     fields = []
     for line in text.splitlines():
         row = FIELD_ROW.match(line)
         if row:
             name, wire_type, scale, unit = row.groups()
             fields.append(Field(name, wire_type, float(scale), unit))
-    if not version or not fields:
-        sys.exit(f"cannot parse version or field table from {path}")
-    return int(version.group(1)), fields
+    if not (version and crc_seed and frag_hdr_len and fields):
+        sys.exit(f"cannot parse the version, CRC seed, fragment header or field table from {path}")
+    if int(frag_hdr_len.group(1)) != FRAGMENT_HEADER.size:
+        sys.exit(f"PACKET_FRAG_HDR_LEN is {frag_hdr_len.group(1)} in {path}, but this script "
+                 f"reads a {FRAGMENT_HEADER.size}-byte fragment header")
+    return Table(int(version.group(1)), fields, int(crc_seed.group(1), 16))
 
 
 def record_format(fields):
@@ -135,25 +158,26 @@ def record_format(fields):
     return "<" + "".join(WIRE_FORMAT[field.wire_type] for field in fields)
 
 
-def record_crc(body):
+def record_crc(body, seed):
     """Calculate the record CRC, the same way the firmware does.
 
-    The CRC is CRC-16/CCITT-FALSE with the seed CRC_SEED.
+    The CRC is CRC-16/CCITT-FALSE.
 
     Args:
         body (bytes): Record bytes before the CRC field.
+        seed (int): CRC seed. Use Table.crc_seed.
 
     Returns:
         int: The 16-bit CRC.
     """
-    return binascii.crc_hqx(body, CRC_SEED)
+    return binascii.crc_hqx(body, seed)
 
 
-def decode(fields, data):
+def decode(table, data):
     """Check one serialized record and read its fields.
 
     Args:
-        fields (list[Field]): Fields in wire order. The last field must be record_crc16.
+        table (Table): Layout from load_table(). The last field must be record_crc16.
         data (bytes): One whole record, after reassembly.
 
     Returns:
@@ -162,15 +186,15 @@ def decode(fields, data):
     Raises:
         ValueError: The length is not the size of the table, or the CRC does not match.
     """
-    fmt = record_format(fields)
+    fmt = record_format(table.fields)
     size = struct.calcsize(fmt)
     if len(data) != size:
         raise ValueError(f"got {len(data)} B, table says {size} B")
     values = struct.unpack(fmt, data)
     raw = {}
-    for field, value in zip(fields, values):
+    for field, value in zip(table.fields, values):
         raw[field.name] = value
-    want = record_crc(data[:-2])
+    want = record_crc(data[:-2], table.crc_seed)
     if raw["record_crc16"] != want:
         raise ValueError(f"CRC mismatch: record has 0x{raw['record_crc16']:04x}, "
                          f"computed 0x{want:04x}")
@@ -314,7 +338,8 @@ async def run(name, count):
     from bleak import BleakClient, BleakScanner
     from bleak.exc import BleakError
 
-    version, fields = load_table()
+    table = load_table()
+    version, fields = table.version, table.fields
     print(f"table v{version}: {', '.join(field.name for field in fields)}")
     device = await BleakScanner.find_device_by_name(name, timeout=30)
     if device is None:
@@ -340,7 +365,7 @@ async def run(name, count):
             record = reassembler.feed(bytes(data))
             if record is None:
                 return
-            raw = decode(fields, record)
+            raw = decode(table, record)
             line = format_record(fields, raw)
         except Exception as e:  # a bad record must never kill the notification callback
             bad += 1
@@ -496,81 +521,87 @@ def sample_value(index, field):
     return 1000 + index
 
 
-def test_table_shape(version, fields):
+def test_table_shape(table):
     """Check that the header gives packet v2.
 
-    Packet v2 has 8 fields in a known order, 17 bytes and only known wire types.
+    Packet v2 has 8 fields in a known order, 17 bytes, only known wire types and the CRC seed
+    0xFFFF.
 
     Args:
-        version (int): Version from load_table().
-        fields (list[Field]): Fields from load_table().
+        table (Table): Layout from load_table().
 
     Raises:
         AssertionError: The header does not match packet v2.
     """
+    fields = table.fields
     size = struct.calcsize(record_format(fields))
     names = [field.name for field in fields]
-    assert version == 2 and len(fields) == 8 and size == 17, (version, len(fields), size)
+    assert table.version == 2 and len(fields) == 8 and size == 17, (table.version, len(fields),
+                                                                    size)
     assert names == ["version", "session_id", "timestamp_s", "sequence", "temp_centi_c",
                      "a_rms_mm_s2", "battery_mv", "record_crc16"], names
     assert all(field.wire_type in WIRE_FORMAT for field in fields)
+    assert table.crc_seed == 0xFFFF, hex(table.crc_seed)
 
 
-def test_crc():
+def test_crc(table):
     """Check the CRC against the published CRC-16/CCITT-FALSE check value 0x29B1.
+
+    Args:
+        table (Table): Layout from load_table().
 
     Raises:
         AssertionError: The CRC is wrong.
     """
-    assert record_crc(b"123456789") == 0x29B1
+    assert record_crc(b"123456789", table.crc_seed) == 0x29B1
 
 
-def test_round_trip(fields):
+def test_round_trip(table):
     """Pack distinct values into a record and check that decode() gives them back.
 
     Args:
-        fields (list[Field]): Fields from load_table().
+        table (Table): Layout from load_table().
 
     Raises:
         AssertionError: A decoded value differs from the packed value.
     """
-    body_fields = fields[:-1]  # everything before record_crc16
+    body_fields = table.fields[:-1]  # everything before record_crc16
     values = []
     for index, field in enumerate(body_fields):
         values.append(sample_value(index, field))
     body = struct.pack(record_format(body_fields), *values)
-    record = body + struct.pack("<H", record_crc(body))
-    raw = decode(fields, record)
-    assert list(raw.values()) == values + [record_crc(body)], raw
+    crc = record_crc(body, table.crc_seed)
+    raw = decode(table, body + struct.pack("<H", crc))
+    assert list(raw.values()) == values + [crc], raw
 
 
-def test_golden(fields):
+def test_golden(table):
     """Decode the record from the firmware unit test and check its values and its line.
 
     Args:
-        fields (list[Field]): Fields from load_table().
+        table (Table): Layout from load_table().
 
     Raises:
         AssertionError: A value or the printed line is wrong.
     """
-    raw = decode(fields, bytes.fromhex(GOLDEN))
+    raw = decode(table, bytes.fromhex(GOLDEN))
     want = dict(version=2, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
                 temp_centi_c=0x1112, a_rms_mm_s2=0x1314, battery_mv=0x1516, record_crc16=0xD39C)
     assert raw == want, raw
-    line = format_record(fields, raw)
+    line = format_record(table.fields, raw)
     assert line == ("version=2  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
                     "temp_centi_c=43.7 C  a_rms_mm_s2=4.884 m/s^2  battery_mv=5398 mV  "
                     "record_crc16=54172"), line
 
 
-def test_bad_records(fields):
+def test_bad_records(table):
     """Check that decode() rejects damaged records.
 
     The test flips one bit, the same as test_parse_rejects in the firmware. It also removes one
     byte and adds one byte.
 
     Args:
-        fields (list[Field]): Fields from load_table().
+        table (Table): Layout from load_table().
 
     Raises:
         AssertionError: decode() accepted a damaged record.
@@ -578,9 +609,9 @@ def test_bad_records(fields):
     golden = bytes.fromhex(GOLDEN)
     flipped = bytearray(golden)
     flipped[4] ^= 0x04
-    assert raises_value_error(decode, fields, bytes(flipped))
-    assert raises_value_error(decode, fields, golden[:-1])
-    assert raises_value_error(decode, fields, golden + b"\x00")
+    assert raises_value_error(decode, table, bytes(flipped))
+    assert raises_value_error(decode, table, golden[:-1])
+    assert raises_value_error(decode, table, golden + b"\x00")
 
 
 def test_row_regex():
@@ -596,6 +627,25 @@ def test_row_regex():
         row = FIELD_ROW.match(f'    X(f, i16, {scale}, "ohm") \\')
         assert row and float(row.group(3)) == float(scale), scale
     assert not FIELD_ROW.match("    X(f, u8, 1) \\")
+
+
+def test_header_constants(tmp_dir):
+    """Check that load_table() stops on a header whose fragment header length differs.
+
+    Args:
+        tmp_dir (pathlib.Path): Folder for the changed copy of packet.h.
+
+    Raises:
+        AssertionError: load_table() accepted the changed header.
+    """
+    bad = tmp_dir / "packet.h"
+    bad.write_text(RECORD_HEADER.read_text().replace("#define PACKET_FRAG_HDR_LEN 6",
+                                                     "#define PACKET_FRAG_HDR_LEN 7"))
+    try:
+        load_table(bad)
+    except SystemExit:
+        return
+    raise AssertionError("load_table() accepted PACKET_FRAG_HDR_LEN 7")
 
 
 def test_reassembly():
@@ -667,17 +717,20 @@ def selftest():
         AssertionError: A check failed.
         SystemExit: A header cannot be parsed.
     """
-    version, fields = load_table()
-    test_table_shape(version, fields)
-    test_crc()
-    test_round_trip(fields)
-    test_golden(fields)
-    test_bad_records(fields)
+    table = load_table()
+    test_table_shape(table)
+    test_crc(table)
+    test_round_trip(table)
+    test_golden(table)
+    test_bad_records(table)
     test_row_regex()
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        test_header_constants(pathlib.Path(tmp_dir))
     test_reassembly()
     test_gaps()
-    size = struct.calcsize(record_format(fields))
-    print(f"selftest ok: v{version}, {size} B, {len(fields)} fields, crc, golden, reassembly, gaps")
+    size = struct.calcsize(record_format(table.fields))
+    print(f"selftest ok: v{table.version}, {size} B, {len(table.fields)} fields, crc, golden, "
+          "reassembly, gaps")
 
 def main():
     """Read the command line and run the selected mode.
@@ -697,10 +750,10 @@ def main():
     if args.selftest:
         selftest()
     elif args.hex is not None:
-        _, fields = load_table()
+        table = load_table()
         try:
             data = bytes.fromhex("".join(args.hex.split()))
-            print(format_record(fields, decode(fields, data)))
+            print(format_record(table.fields, decode(table, data)))
         except ValueError as e:
             sys.exit(f"error: {e}")
     else:
