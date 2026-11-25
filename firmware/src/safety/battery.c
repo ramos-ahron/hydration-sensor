@@ -1,5 +1,5 @@
-#include "safety/battery.h"
 #include "hs/thresholds.h"
+#include "safety/battery.h"
 
 battery_level_e batt_classify(battery_level_e prev, int mv)
 {

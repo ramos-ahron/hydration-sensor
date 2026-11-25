@@ -1,8 +1,10 @@
-#include "safety/safety.h"
 #include "fsm/state_machine.h"
 #include "hs/thresholds.h"
 #include "safety/battery.h"
+#include "safety/safety.h"
+
 #include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/hwinfo.h>

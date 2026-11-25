@@ -1,12 +1,13 @@
-#include "fsm/state_measurement.h"
 #include "ble/packet.h"
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
+#include "fsm/state_measurement.h"
 #include "hs/thresholds.h"
 #include "pipeline/pipeline.h"
 #include "safety/safety.h"
 #include "storage/record.h"
 #include "ui/led.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>

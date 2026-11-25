@@ -1,7 +1,9 @@
 #include "sensors/sensor.h"
+
 #include <errno.h>
 #include <math.h>
 #include <stdint.h>
+
 #include <zephyr/ztest.h>
 
 /**

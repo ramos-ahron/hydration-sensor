@@ -9,6 +9,17 @@ AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortBlocksOnASingleLine: Never
 SortIncludes: CaseSensitive
+IncludeIsMainRegex: "a^"
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: "^<(zephyr/|nrfx|hal/)"
+    Priority: 3
+  - Regex: "^<[^/]+>$"
+    Priority: 2
+  - Regex: ".*"
+    Priority: 3
 Cpp11BracedListStyle: false
 SpacesBeforeTrailingComments: 2
 IndentCaseLabels: true

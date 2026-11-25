@@ -1,7 +1,8 @@
-#include "fsm/state_shutdown.h"
 #include "ble/ble_service.h"
 #include "fsm/state_machine.h"
+#include "fsm/state_shutdown.h"
 #include "pipeline/pipeline.h"
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 

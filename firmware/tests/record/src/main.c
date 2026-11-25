@@ -1,6 +1,8 @@
 #include "storage/record.h"
+
 #include <errno.h>
 #include <string.h>
+
 #include <zephyr/settings/settings.h>
 #include <zephyr/ztest.h>
 

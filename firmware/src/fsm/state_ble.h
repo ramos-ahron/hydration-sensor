@@ -2,6 +2,7 @@
 #define STATE_BLE_H
 
 #include "fsm/state_common.h"
+
 #include <stdbool.h>
 
 /**

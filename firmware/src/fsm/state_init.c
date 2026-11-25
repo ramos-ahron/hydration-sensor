@@ -1,12 +1,14 @@
-#include "fsm/state_init.h"
 #include "ble/ble_service.h"
+#include "fsm/state_init.h"
 #include "fsm/state_machine.h"
 #include "safety/safety.h"
 #include "sensors/afe.h"
 #include "sensors/sensor.h"
 #include "storage/record.h"
 #include "ui/led.h"
+
 #include <errno.h>
+
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>

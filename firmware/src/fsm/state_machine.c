@@ -1,14 +1,15 @@
-#include "fsm/state_machine.h"
 #include "common/enum_to_string.h"
 #include "fsm/state_active.h"
 #include "fsm/state_common.h"
 #include "fsm/state_init.h"
 #include "fsm/state_init_fault.h"
+#include "fsm/state_machine.h"
 #include "fsm/state_shutdown.h"
 #include "fsm/state_sleep.h"
 #include "fsm/state_sleep_prep.h"
 #include "safety/safety.h"
 #include "ui/led.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 

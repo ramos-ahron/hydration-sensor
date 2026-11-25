@@ -5,6 +5,7 @@
 #include "hs/thresholds.h"
 #include "safety/safety.h"
 #include "ui/led.h"
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 

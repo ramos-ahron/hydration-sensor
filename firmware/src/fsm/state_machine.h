@@ -2,6 +2,7 @@
 #define STATE_MACHINE_H
 
 #include "fsm/state_common.h"
+
 #include <zephyr/kernel.h>
 
 /**

@@ -1,10 +1,12 @@
-#include "pipeline/pipeline.h"
 #include "fsm/state_machine.h"
 #include "hs/bioz.h"
+#include "pipeline/pipeline.h"
 #include "safety/safety.h"
 #include "sensors/afe.h"
 #include "sensors/sensor.h"
+
 #include <errno.h>
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>

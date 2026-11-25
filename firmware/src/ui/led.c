@@ -1,5 +1,7 @@
 #include "ui/led.h"
+
 #include <errno.h>
+
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>

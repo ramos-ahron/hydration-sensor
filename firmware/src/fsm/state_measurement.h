@@ -2,6 +2,7 @@
 #define STATE_MEASUREMENT_H
 
 #include "fsm/state_common.h"
+
 #include <stdbool.h>
 
 /**

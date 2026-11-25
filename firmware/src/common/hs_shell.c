@@ -2,7 +2,9 @@
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
 #include "ui/led.h"
+
 #include <string.h>
+
 #include <zephyr/shell/shell.h>
 
 /**

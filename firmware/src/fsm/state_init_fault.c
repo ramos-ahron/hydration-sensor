@@ -1,5 +1,6 @@
 #include "fsm/state_init_fault.h"
 #include "ui/led.h"
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 

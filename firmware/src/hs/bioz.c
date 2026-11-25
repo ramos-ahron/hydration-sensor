@@ -1,4 +1,5 @@
 #include "hs/bioz.h"
+
 #include <errno.h>
 
 int bioz_calibrate(void)

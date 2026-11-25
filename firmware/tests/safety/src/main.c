@@ -1,7 +1,9 @@
 #include "fsm/state_machine.h"
 #include "hs/thresholds.h"
 #include "safety/safety.h"
+
 #include <errno.h>
+
 #include <zephyr/ztest.h>
 
 extern void safety_set_batt_override(int mv);

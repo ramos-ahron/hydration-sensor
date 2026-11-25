@@ -1,10 +1,11 @@
-#include "fsm/state_ble.h"
 #include "ble/ble_service.h"
 #include "ble/packet.h"
 #include "common/enum_to_string.h"
+#include "fsm/state_ble.h"
 #include "fsm/state_machine.h"
 #include "storage/record.h"
 #include "ui/led.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>

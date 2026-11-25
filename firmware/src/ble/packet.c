@@ -1,6 +1,8 @@
 #include "ble/packet.h"
+
 #include <errno.h>
 #include <string.h>
+
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>

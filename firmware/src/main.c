@@ -1,4 +1,5 @@
 #include "fsm/state_machine.h"
+
 #include <zephyr/kernel.h>
 
 /**

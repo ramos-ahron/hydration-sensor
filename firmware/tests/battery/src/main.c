@@ -1,5 +1,6 @@
 #include "hs/thresholds.h"
 #include "safety/battery.h"
+
 #include <zephyr/ztest.h>
 
 #define OK   BATTERY_LEVEL_OK

@@ -1,5 +1,5 @@
-#include "sensors/sensor.h"
 #include "hs/thresholds.h"
+#include "sensors/sensor.h"
 
 #include <errno.h>
 #include <math.h>

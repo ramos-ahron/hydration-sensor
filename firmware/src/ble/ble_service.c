@@ -1,7 +1,9 @@
 #include "ble/ble_service.h"
 #include "ble/packet.h"
 #include "fsm/state_machine.h"
+
 #include <errno.h>
+
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
