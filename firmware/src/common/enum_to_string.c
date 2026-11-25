@@ -139,4 +139,17 @@ const char *ble_state_to_string(ble_state_e value)
     return "";
 }
 
+const char *battery_level_to_string(battery_level_e value)
+{
+    switch (value) {
+        case BATTERY_LEVEL_OK:
+            return "OK";
+        case BATTERY_LEVEL_LOW:
+            return "LOW";
+        case BATTERY_LEVEL_CRITICAL:
+            return "CRITICAL";
+    }
+    return "";
+}
+
 #endif  // CONFIG_FSM_ENUM_STRINGS

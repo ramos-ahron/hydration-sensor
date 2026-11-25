@@ -272,11 +272,11 @@ bool battery_above_margin(void)
 }
 
 #ifdef CONFIG_SHELL
+#include "common/enum_to_string.h"
+
 #include <string.h>
 
 #include <zephyr/shell/shell.h>
-
-static const char *const level_name[] = { "OK", "LOW", "CRITICAL" };
 
 /**
  * @brief Shell command "hs batt [<mv>|auto]". Show the battery, and optionally set the override.
@@ -311,10 +311,10 @@ static int cmd_batt(const struct shell *sh, size_t argc, char **argv)
     }
     if (batt_override >= 0) {
         shell_print(sh, "batt mv=%d level=%s override=%d", battery_mv(),
-                    level_name[battery_level()], batt_override);
+                    battery_level_to_string(battery_level()), batt_override);
     } else {
         shell_print(sh, "batt mv=%d level=%s override=off", battery_mv(),
-                    level_name[battery_level()]);
+                    battery_level_to_string(battery_level()));
     }
     return 0;
 }
