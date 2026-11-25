@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
-#include <zephyr/shell/shell.h>
 
 LOG_MODULE_REGISTER(record, LOG_LEVEL_INF);
 
@@ -411,6 +410,8 @@ int record_clear(void)
 }
 
 #ifdef CONFIG_SHELL
+#include <zephyr/shell/shell.h>
+
 /**
  * @brief Shell command "hs store list [n]". Print the newest @p n records, newest first.
  *
@@ -503,4 +504,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub, SHELL_CMD_ARG(list, NULL, "[n]", cmd_list, 1
                                SHELL_CMD_ARG(fault, NULL, "<0|1>", cmd_fault, 2, 0),
                                SHELL_SUBCMD_SET_END);
 SHELL_SUBCMD_ADD((hs), store, &sub, "Record store", NULL, 1, 0);
-#endif
+#endif  // CONFIG_SHELL

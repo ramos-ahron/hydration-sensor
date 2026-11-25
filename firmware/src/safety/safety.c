@@ -14,11 +14,6 @@
 #include <hal/nrf_power.h>
 #endif
 
-#ifdef CONFIG_SHELL
-#include <string.h>
-#include <zephyr/shell/shell.h>
-#endif
-
 LOG_MODULE_REGISTER(safety, LOG_LEVEL_INF);
 
 #define BATT_UNKNOWN (-1)
@@ -275,6 +270,10 @@ bool battery_above_margin(void)
 }
 
 #ifdef CONFIG_SHELL
+#include <string.h>
+
+#include <zephyr/shell/shell.h>
+
 static const char *const level_name[] = { "OK", "LOW", "CRITICAL" };
 
 /**
@@ -357,4 +356,4 @@ static int cmd_vbus(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_SUBCMD_ADD((hs), batt, NULL, "Battery: hs batt [<mv>|auto]", cmd_batt, 1, 1);
 SHELL_SUBCMD_ADD((hs), vbus, NULL, "VBUS: hs vbus [0|1|auto]", cmd_vbus, 1, 1);
-#endif
+#endif  // CONFIG_SHELL

@@ -504,4 +504,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub, SHELL_CMD(stat, NULL, "Link and bond status"
                                SHELL_CMD(unpair, NULL, "Remove all bonds", cmd_unpair),
                                SHELL_SUBCMD_SET_END);
 SHELL_SUBCMD_ADD((hs), ble, &sub, "BLE", NULL, 1, 0);
-#endif
+#endif  // CONFIG_SHELL

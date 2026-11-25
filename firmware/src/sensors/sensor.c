@@ -10,7 +10,6 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/shell/shell.h>
 
 LOG_MODULE_REGISTER(sensor, LOG_LEVEL_INF);
 
@@ -139,6 +138,8 @@ void set_override(const struct override *o)
 }
 
 #ifdef CONFIG_SHELL
+#include <zephyr/shell/shell.h>
+
 /**
  * @brief Shell command "hs ctx". Read both context sensors one time and print the results.
  *
@@ -166,4 +167,4 @@ static int cmd_ctx(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_SUBCMD_ADD((hs), ctx, NULL, "Read context sensors", cmd_ctx, 1, 0);
-#endif
+#endif  // CONFIG_SHELL

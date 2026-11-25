@@ -1,3 +1,4 @@
+#ifdef CONFIG_SHELL
 #include "common/enum_to_string.h"
 #include "fsm/state_machine.h"
 #include "ui/led.h"
@@ -62,3 +63,4 @@ static int cmd_led(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 SHELL_SUBCMD_ADD((hs), led, NULL, "Show the LED color being driven", cmd_led, 1, 0);
+#endif  // CONFIG_SHELL
