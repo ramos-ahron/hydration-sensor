@@ -59,6 +59,15 @@ ZTEST(battery, test_no_chatter_low)
     hold(LOW, L - H, LOW);
 }
 
+ZTEST(battery, test_above_margin)
+{
+    zassert_false(batt_above_margin(C + H - 1), "%d mV: want false", C + H - 1);
+    zassert_true(batt_above_margin(C + H), "%d mV: want true", C + H);
+    zassert_true(batt_above_margin(L), "%d mV: want true", L);
+    zassert_false(batt_above_margin(0), "0 mV: want false");
+    zassert_true(batt_above_margin(-1), "unknown reading: want true");
+}
+
 ZTEST(battery, test_no_chatter_critical)
 {
     hold(LOW, C, LOW); /* at CRITICAL threshold: not below it */

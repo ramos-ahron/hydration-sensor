@@ -15,3 +15,8 @@ battery_level_e batt_classify(battery_level_e prev, int mv)
     }
     return BATTERY_LEVEL_OK;
 }
+
+bool batt_above_margin(int mv)
+{
+    return mv < 0 || mv >= BATT_CRITICAL_MV + BATT_MARGIN_MV;
+}

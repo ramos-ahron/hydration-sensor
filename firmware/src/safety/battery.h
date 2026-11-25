@@ -3,6 +3,8 @@
 
 #include "safety/safety.h"
 
+#include <stdbool.h>
+
 /**
  * @brief Find the battery level from a voltage reading, with hysteresis.
  *
@@ -15,5 +17,17 @@
  * @return The new level. For an unknown reading, the function returns @p prev.
  */
 battery_level_e batt_classify(battery_level_e prev, int mv);
+
+/**
+ * @brief Check if a voltage is high enough to leave SHUTDOWN.
+ *
+ * The function has no side effects.
+ *
+ * @param[in] mv  Battery voltage in mV. A negative value means the reading is not known.
+ *
+ * @return true when @p mv is at or above BATT_CRITICAL_MV + BATT_MARGIN_MV, or when @p mv is
+ *         not known, and false when it is not.
+ */
+bool batt_above_margin(int mv);
 
 #endif  // BATTERY_H

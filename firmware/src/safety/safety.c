@@ -266,9 +266,7 @@ battery_level_e battery_level(void)
 
 bool battery_above_margin(void)
 {
-    const int mv = batt_mv_last;
-
-    return mv < 0 || mv >= BATT_CRITICAL_MV + BATT_MARGIN_MV;
+    return batt_above_margin(batt_mv_last);
 }
 
 #ifdef CONFIG_SHELL
