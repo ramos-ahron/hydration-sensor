@@ -26,9 +26,9 @@ LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
 K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 16, 4);
 
 struct state_transition {
-    state_e from;
+    state_top_e from;
     state_event_e event;
-    state_e to;
+    state_top_e to;
 };
 
 static const struct state_transition state_transitions[] = {
@@ -44,7 +44,7 @@ static const struct state_transition state_transitions[] = {
     { STATE_SHUTDOWN, STATE_EVENT_BATTERY_MARGIN_OK, STATE_INIT },
 };
 
-static state_e state;
+static state_top_e state;
 
 struct fsm_timer_slot {
     struct k_work_delayable dwork;
@@ -105,7 +105,7 @@ void fsm_timer_stop(fsm_timer_e timer)
  * @param[in] event  Event that caused the transition. Only the log uses this value.
  * @param[in] to     State that the machine enters.
  */
-static void state_enter(state_e from, state_event_e event, state_e to)
+static void state_enter(state_top_e from, state_event_e event, state_top_e to)
 {
     LOG_INF("%s -> %s (%s)", state_to_string(from), state_to_string(to),
             state_event_to_string(event));

@@ -5,7 +5,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-void state_sleep_prep_run(state_e from)
+void state_sleep_prep_run(state_top_e from)
 {
     __ASSERT(from == STATE_ACTIVE, "SLEEP_PREP entered from %d", from);
     ARG_UNUSED(from);

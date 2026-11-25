@@ -43,7 +43,7 @@ static inline const char *empty_func(unsigned int val)
  * @return The name of the state, for example "ACTIVE". The value is an empty string when
  *         @p state is not known.
  */
-const char *state_to_string(state_e state);
+const char *state_to_string(state_top_e state);
 
 /**
  * @brief Convert a state machine event to its name for logging.

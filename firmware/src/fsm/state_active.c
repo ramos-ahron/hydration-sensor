@@ -54,7 +54,7 @@ bool state_active_process_event(state_event_e event)
     return consumed;
 }
 
-void state_active_run(state_e from)
+void state_active_run(state_top_e from)
 {
     __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
     ARG_UNUSED(from);

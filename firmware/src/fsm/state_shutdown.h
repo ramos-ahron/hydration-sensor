@@ -10,6 +10,6 @@
  *
  * @param[in] from  Previous state.
  */
-void state_shutdown_run(state_e from);
+void state_shutdown_run(state_top_e from);
 
 #endif  // STATE_SHUTDOWN_H

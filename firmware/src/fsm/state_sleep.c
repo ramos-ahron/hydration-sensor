@@ -6,7 +6,7 @@
 // TODO: Tune the interval of the sleep beat.
 #define SLEEP_BEAT_MS 4000
 
-void state_sleep_run(state_e from)
+void state_sleep_run(state_top_e from)
 {
     __ASSERT(from == STATE_SLEEP_PREP, "SLEEP entered from %d", from);
     ARG_UNUSED(from);

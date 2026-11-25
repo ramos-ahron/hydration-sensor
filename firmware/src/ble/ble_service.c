@@ -53,11 +53,11 @@ typedef enum {
     ADV_OFF,
     ADV_BONDED,
     ADV_PAIRING,
-} adv_mode_e;
+} ble_adv_mode_e;
 
 static struct bt_conn *current_conn;
 static volatile bool ccc_notify;
-static volatile adv_mode_e adv_mode;
+static volatile ble_adv_mode_e adv_mode;
 static volatile bool pairing_open;
 static bool ready;
 

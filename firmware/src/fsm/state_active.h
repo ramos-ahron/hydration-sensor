@@ -11,7 +11,7 @@
  *
  * @param[in] from  Previous top-level state.
  */
-void state_active_run(state_e from);
+void state_active_run(state_top_e from);
 
 /**
  * @brief Send an event to the regions of the active state.

@@ -11,7 +11,7 @@ typedef enum {
     STATE_SLEEP_PREP,
     STATE_SLEEP,
     STATE_SHUTDOWN,
-} state_e;
+} state_top_e;
 
 /**
  * @brief Events that cause state machine transitions.

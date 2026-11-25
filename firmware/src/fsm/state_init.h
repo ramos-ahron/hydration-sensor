@@ -8,6 +8,6 @@
  *
  * @param[in] from  State that the machine leaves to enter STATE_INIT.
  */
-void state_init_run(state_e from);
+void state_init_run(state_top_e from);
 
 #endif  // STATE_INIT_H

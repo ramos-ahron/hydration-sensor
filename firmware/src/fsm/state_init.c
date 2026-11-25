@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 // Time in ms that INIT stays visible before the FSM timer posts INIT_OK or INIT_FAIL.
 #define INIT_DWELL_MS 500
 
-void state_init_run(state_e from)
+void state_init_run(state_top_e from)
 {
     __ASSERT(from == STATE_INIT
                  || from == STATE_INIT_FAULT

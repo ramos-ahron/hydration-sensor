@@ -2,7 +2,7 @@
 
 #ifdef CONFIG_FSM_ENUM_STRINGS
 
-const char *state_to_string(state_e value)
+const char *state_to_string(state_top_e value)
 {
     switch (value) {
         case STATE_INIT:
