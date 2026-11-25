@@ -13,10 +13,8 @@ The other modes use only the standard library.
 Where the layout comes from:
 
     The field table and the version come from src/ble/packet.h (the X() rows of PACKET_FIELDS
-    and PACKET_VERSION). The flag bits, reject names and status names come from
-    src/hs/hs_types.h when that file exists. Packet v2 has no flags or status field, so the file
-    is optional. This script has no field list of its own. The drawings below are for the
-    reader. The header is the source of truth.
+    and PACKET_VERSION). This script has no field list of its own. The drawings below are for
+    the reader. The header is the source of truth.
 
 One fragment = one BLE notification (little-endian):
 
@@ -56,7 +54,6 @@ import sys
 
 SRC_DIR = pathlib.Path(__file__).resolve().parent.parent / "src"
 RECORD_HEADER = SRC_DIR / "ble/packet.h"
-TYPES_HEADER = SRC_DIR / "hs/hs_types.h"
 
 DEVICE_NAME = "Hydration"  # CONFIG_BT_DEVICE_NAME in prj.conf
 RECORD_UUID = "3f6c0002-8a4e-4b5d-9c2a-6e1f0b7d4a21"  # RECORD_UUID_VAL in ble_service.c
@@ -76,16 +73,8 @@ FIELD_ROW = re.compile(
 
 CRC_SEED = 0xFFFF  # PACKET_CRC_INIT
 
-# Values that mean "not available": any i16 field at its minimum, and these u16 fields at 0xFFFF.
+# Value that means "not available" in any i16 field.
 NA_I16 = -32768
-NA_U16 = 0xFFFF
-NA_U16_FIELDS = ("R0_deci_ohm", "Rinf_deci_ohm", "fit_error_bp", "optional_raw_index")
-
-# Parts of a flags field, when the record has one.
-REJECT_MASK = 0xF  # reject reason: 4 bits at reject_shift
-MODE_MASK = 0x3  # measurement mode: 2 bits at mode_shift
-MODE_NAMES = ("MANUAL", "TIMER", "CONTINUOUS")
-BUILD_TAGS = (("SIM", "BUILD_AFE_SIM"), ("ORACLE", "BUILD_ORACLE"))  # (tag, flag name)
 
 SEQUENCE_MASK = 0xFFFF  # sequence is u16 and wraps at 65536
 HALF_SEQUENCE_RANGE = 0x8000  # a step this large or larger counts as going backwards
@@ -107,26 +96,6 @@ class Field:
     scale: float
     unit: str
 
-
-@dataclasses.dataclass
-class HeaderNames:
-    """Flag, reject and status names from hs_types.h.
-
-    All dicts are empty and both shifts are None when hs_types.h does not exist.
-
-    Attributes:
-        flag_bits (dict[int, str]): Bit number to flag name.
-        reject_names (dict[int, str]): Reject value to reject name.
-        status_names (dict[int, str]): Status value to status name.
-        reject_shift (int | None): Bit position of the 4-bit reject reason in the flags field.
-        mode_shift (int | None): Bit position of the 2-bit mode in the flags field.
-    """
-
-    flag_bits: dict
-    reject_names: dict
-    status_names: dict
-    reject_shift: int | None
-    mode_shift: int | None
 
 def load_table(path=RECORD_HEADER):
     """Read the record version and the field table from the firmware header.
@@ -153,73 +122,6 @@ def load_table(path=RECORD_HEADER):
         sys.exit(f"cannot parse version or field table from {path}")
     return int(version.group(1)), fields
 
-
-def parse_enum(text, tag, prefix):
-    """Read the members of one C enum.
-
-    Only members with an explicit "= <number>" count.
-
-    Args:
-        text (str): Contents of the C header.
-        tag (str): Enum tag, for example "hs_reject".
-        prefix (str): Prefix to remove from each member name, for example "HS_REJECT_".
-
-    Returns:
-        dict[int, str]: Member value to member name without the prefix. Empty when text has
-            no such enum.
-    """
-    body = re.search(rf"enum {tag} \{{(.*?)\}};", text, re.S)
-    if not body:
-        return {}
-    members = {}
-    for name, value in re.findall(rf"{prefix}(\w+)\s*=\s*(\d+)", body.group(1)):
-        members[int(value)] = name
-    return members
-
-
-def parse_flag_bits(text):
-    """Read the flag bit definitions.
-
-    Each definition has the form "#define HS_FLAG_<name> (1u << <bit>)".
-
-    Args:
-        text (str): Contents of the C header.
-
-    Returns:
-        dict[int, str]: Bit number to flag name without the HS_FLAG_ prefix.
-    """
-    bits = {}
-    for name, bit in re.findall(r"#define HS_FLAG_(\w+)\s+\(1u << (\d+)\)", text):
-        bits[int(bit)] = name
-    return bits
-
-
-def load_names(path=TYPES_HEADER):
-    """Read the flag, reject and status names from hs_types.h.
-
-    Args:
-        path (pathlib.Path, optional): Header to read. Defaults to TYPES_HEADER.
-
-    Returns:
-        HeaderNames: The names. All parts are empty when the file does not exist.
-
-    Raises:
-        SystemExit: The file exists, but the flags, the reject enum, the status enum or one of
-            the two shifts is missing.
-    """
-    if not path.exists():
-        return HeaderNames(flag_bits={}, reject_names={}, status_names={},
-                           reject_shift=None, mode_shift=None)
-    text = path.read_text()
-    flag_bits = parse_flag_bits(text)
-    reject_names = parse_enum(text, "hs_reject", "HS_REJECT_")
-    status_names = parse_enum(text, "hs_status", "HS_STATUS_")
-    reject_shift = re.search(r"#define HS_FLAG_REJECT_SHIFT\s+(\d+)", text)
-    mode_shift = re.search(r"#define HS_FLAG_MODE_SHIFT\s+(\d+)", text)
-    if not (flag_bits and reject_names and status_names and reject_shift and mode_shift):
-        sys.exit(f"cannot parse flags, reject or status names from {path}")
-    return HeaderNames(flag_bits, reject_names, status_names,
-                       int(reject_shift.group(1)), int(mode_shift.group(1)))
 
 def record_format(fields):
     """Make the struct format string for a record.
@@ -275,126 +177,39 @@ def decode(fields, data):
     return raw
 
 
-def format_flags(flags, names):
-    """Show a flags value as text.
-
-    Args:
-        flags (int): Raw flags value.
-        names (HeaderNames): Flag, reject and status names.
-
-    Returns:
-        str: The hex value and the names of the set bits, for example "0x00000401 [A B]".
-            When names has both shifts, "reject=<name> mode=<name>" follows.
-    """
-    set_names = []
-    for bit, name in sorted(names.flag_bits.items()):
-        if flags >> bit & 1:
-            set_names.append(name)
-    bits = " ".join(set_names)
-    if names.reject_shift is None or names.mode_shift is None:
-        return f"0x{flags:08x} [{bits}]"
-    reject = names.reject_names.get(flags >> names.reject_shift & REJECT_MASK, "?")
-    mode = flags >> names.mode_shift & MODE_MASK
-    mode_text = MODE_NAMES[mode] if mode < len(MODE_NAMES) else f"?{mode}"
-    return f"0x{flags:08x} [{bits}] reject={reject} mode={mode_text}"
-
-
-def is_not_available(field, value):
-    """Check if a value is the "not available" marker of its field.
-
-    Args:
-        field (Field): Field of the value.
-        value (int): Raw value.
-
-    Returns:
-        bool: True for NA_I16 in any i16 field, and for NA_U16 in a field of NA_U16_FIELDS.
-    """
-    if field.wire_type == "i16" and value == NA_I16:
-        return True
-    return field.name in NA_U16_FIELDS and value == NA_U16
-
-
-def format_value(field, value, names):
+def format_value(field, value):
     """Show one field value as text.
 
     Args:
         field (Field): Field of the value.
         value (int): Raw value.
-        names (HeaderNames): Flag, reject and status names.
 
     Returns:
-        str: The first of these that applies:
-            - the text from format_flags() for the flags field
-            - the status name for the status field, or the number if the name is unknown
-            - "n/a" for a "not available" marker
-            - the value times the scale, then the unit if the field has one
+        str: "n/a" for NA_I16 in an i16 field. Else the value times the scale, then the unit if
+            the field has one.
     """
-    if field.name == "flags":
-        return format_flags(value, names)
-    if field.name == "status":
-        return names.status_names.get(value, str(value))
-    if is_not_available(field, value):
+    if field.wire_type == "i16" and value == NA_I16:
         return "n/a"
     text = str(value) if field.scale == 1 else str(round(value * field.scale, 6))
     return f"{text} {field.unit}" if field.unit else text
 
 
-def flag_bit(names, flag_name):
-    """Find the bit number of a flag.
-
-    Args:
-        names (HeaderNames): Flag, reject and status names.
-        flag_name (str): Flag name without the HS_FLAG_ prefix.
-
-    Returns:
-        int | None: The bit number, or None if hs_types.h does not define the flag. If the
-            header defines the name two times, the last bit is used.
-    """
-    bit = None
-    for number, name in names.flag_bits.items():
-        if name == flag_name:
-            bit = number  # if a name is defined twice, the last definition wins
-    return bit
-
-
-def build_tags(raw, names):
-    """Make the build tags for the start of a record line.
-
-    Args:
-        raw (dict[str, int]): Decoded record from decode().
-        names (HeaderNames): Flag, reject and status names.
-
-    Returns:
-        str: "[SIM] " if BUILD_AFE_SIM is set, then "[ORACLE] " if BUILD_ORACLE is set. Empty
-            when the record has no flags field. A flag that hs_types.h does not define counts
-            as not set.
-    """
-    if "flags" not in raw:
-        return ""
-    tags = ""
-    for tag, flag_name in BUILD_TAGS:
-        bit = flag_bit(names, flag_name)
-        if bit is not None and raw["flags"] >> bit & 1:  # a missing flag counts as not set
-            tags += f"[{tag}] "
-    return tags
-
-
-def format_record(fields, raw, names):
+def format_record(fields, raw):
     """Show one decoded record as one line.
 
     Args:
         fields (list[Field]): Fields in wire order.
         raw (dict[str, int]): Decoded record from decode().
-        names (HeaderNames): Flag, reject and status names.
 
     Returns:
-        str: The build tags, then "name=value" for each field in table order. Two spaces
-            separate the fields.
+        str: "name=value" for each field in table order. Two spaces separate the fields.
     """
     parts = []
     for field in fields:
-        parts.append(f"{field.name}={format_value(field, raw[field.name], names)}")
-    return build_tags(raw, names) + "  ".join(parts)
+        parts.append(f"{field.name}={format_value(field, raw[field.name])}")
+    return "  ".join(parts)
+
+
 
 class Reassembler:
     """Join fragments back into whole records.
@@ -500,7 +315,6 @@ async def run(name, count):
     from bleak.exc import BleakError
 
     version, fields = load_table()
-    names = load_names()
     print(f"table v{version}: {', '.join(field.name for field in fields)}")
     device = await BleakScanner.find_device_by_name(name, timeout=30)
     if device is None:
@@ -527,7 +341,7 @@ async def run(name, count):
             if record is None:
                 return
             raw = decode(fields, record)
-            line = format_record(fields, raw, names)
+            line = format_record(fields, raw)
         except Exception as e:  # a bad record must never kill the notification callback
             bad += 1
             why = e if isinstance(e, ValueError) else repr(e)
@@ -730,12 +544,11 @@ def test_round_trip(fields):
     assert list(raw.values()) == values + [record_crc(body)], raw
 
 
-def test_golden(fields, names):
+def test_golden(fields):
     """Decode the record from the firmware unit test and check its values and its line.
 
     Args:
         fields (list[Field]): Fields from load_table().
-        names (HeaderNames): Names from load_names().
 
     Raises:
         AssertionError: A value or the printed line is wrong.
@@ -744,7 +557,7 @@ def test_golden(fields, names):
     want = dict(version=2, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
                 temp_centi_c=0x1112, a_rms_mm_s2=0x1314, battery_mv=0x1516, record_crc16=0xD39C)
     assert raw == want, raw
-    line = format_record(fields, raw, names)
+    line = format_record(fields, raw)
     assert line == ("version=2  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
                     "temp_centi_c=43.7 C  a_rms_mm_s2=4.884 m/s^2  battery_mv=5398 mV  "
                     "record_crc16=54172"), line
@@ -783,36 +596,6 @@ def test_row_regex():
         row = FIELD_ROW.match(f'    X(f, i16, {scale}, "ohm") \\')
         assert row and float(row.group(3)) == float(scale), scale
     assert not FIELD_ROW.match("    X(f, u8, 1) \\")
-
-
-def test_flags(fields, names):
-    """Check the flag handling.
-
-    Packet v2 has no flags or status field. A flags field shows no build tags when the names do
-    not define BUILD_AFE_SIM or BUILD_ORACLE. An unknown mode shows as "?<value>".
-
-    Args:
-        fields (list[Field]): Fields from load_table().
-        names (HeaderNames): Names from load_names().
-
-    Raises:
-        AssertionError: The flags text is wrong, or a missing flag shows a tag.
-    """
-    assert not any(field.name in ("flags", "status") for field in fields)
-    if not TYPES_HEADER.exists():
-        assert names == HeaderNames(flag_bits={}, reject_names={}, status_names={},
-                                    reject_shift=None, mode_shift=None)
-    flags_table = [Field("version", "u8", 1.0, ""), Field("flags", "u32", 1.0, ""),
-                   Field("record_crc16", "u16", 1.0, "")]
-    some_names = HeaderNames(flag_bits={0: "A"}, reject_names={}, status_names={},
-                             reject_shift=16, mode_shift=20)
-    for header_names in (names, some_names):
-        line = format_record(flags_table, {"version": 1, "flags": 0xFFFFFFFF, "record_crc16": 0},
-                             header_names)
-        assert "[SIM]" not in line and "[ORACLE]" not in line, line
-        assert "flags=0xffffffff" in line, line
-    assert "mode=?3" in format_flags(3 << 20, some_names)
-    assert format_flags(1, names) == "0x00000001 []"
 
 
 def test_reassembly():
@@ -885,14 +668,12 @@ def selftest():
         SystemExit: A header cannot be parsed.
     """
     version, fields = load_table()
-    names = load_names()
     test_table_shape(version, fields)
     test_crc()
     test_round_trip(fields)
-    test_golden(fields, names)
+    test_golden(fields)
     test_bad_records(fields)
     test_row_regex()
-    test_flags(fields, names)
     test_reassembly()
     test_gaps()
     size = struct.calcsize(record_format(fields))
@@ -919,7 +700,7 @@ def main():
         _, fields = load_table()
         try:
             data = bytes.fromhex("".join(args.hex.split()))
-            print(format_record(fields, decode(fields, data), load_names()))
+            print(format_record(fields, decode(fields, data)))
         except ValueError as e:
             sys.exit(f"error: {e}")
     else:
