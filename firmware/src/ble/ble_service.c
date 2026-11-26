@@ -14,12 +14,23 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/util.h>
 
-LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
-
 #define FRAG_MAX        (CONFIG_BT_L2CAP_TX_MTU - 3)
 #define SVC_UUID_VAL    BT_UUID_128_ENCODE(0x3f6c0001, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 #define RECORD_UUID_VAL BT_UUID_128_ENCODE(0x3f6c0002, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 #define RECORD_ATTR     (&hydration_svc.attrs[1])
+
+/**
+ * @brief Advertising mode that the FSM requested.
+ *
+ * recycled() starts this advertising again when the stack frees a connection object.
+ */
+typedef enum {
+    ADV_OFF,
+    ADV_BONDED,
+    ADV_PAIRING,
+} ble_adv_mode_e;
+
+LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 
 static ssize_t ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value);
 
@@ -40,21 +51,6 @@ static const struct bt_data ad[] = {
 static const struct bt_data sd[] = {
     BT_DATA_BYTES(BT_DATA_UUID128_ALL, SVC_UUID_VAL),
 };
-
-static const struct bt_conn_auth_cb auth_cb = {
-    .pairing_accept = pairing_accept,
-};
-
-/**
- * @brief Advertising mode that the FSM requested.
- *
- * recycled() starts this advertising again when the stack frees a connection object.
- */
-typedef enum {
-    ADV_OFF,
-    ADV_BONDED,
-    ADV_PAIRING,
-} ble_adv_mode_e;
 
 static struct bt_conn *current_conn;
 static volatile bool ccc_notify;
@@ -260,6 +256,10 @@ static enum bt_security_err pairing_accept(struct bt_conn *conn,
     return BT_SECURITY_ERR_SUCCESS;
 }
 
+static const struct bt_conn_auth_cb auth_cb = {
+    .pairing_accept = pairing_accept,
+};
+
 /**
  * @brief Log the end of a pairing.
  *
@@ -289,6 +289,40 @@ static struct bt_conn_auth_info_cb auth_info_cb = {
     .pairing_complete = pairing_complete,
     .pairing_failed = pairing_failed,
 };
+
+/**
+ * @brief Check if a link can receive packets.
+ *
+ * A stored CCC of a bonded peer does not count. The central must write the CCC on this link
+ * (ccc_notify). Packets go out on an encrypted link only.
+ *
+ * @param[in] conn  Link to check. Can be NULL.
+ *
+ * @return true when @p conn is the current link, the link is encrypted and its central turned
+ *         notifications on, and false when one of these is not true.
+ */
+static bool subscribed(struct bt_conn *conn)
+{
+    return conn
+           && conn == current_conn
+           && ccc_notify
+           && bt_conn_get_security(conn) >= BT_SECURITY_L2;
+}
+
+/**
+ * @brief Post TX_DONE when the stack sent the last fragment of a packet.
+ *
+ * The BT host calls this function. The function only posts the event.
+ *
+ * @param[in] conn       Link. The function does not use this value.
+ * @param[in] user_data  The function does not use this value.
+ */
+static void record_sent(struct bt_conn *conn, void *user_data)
+{
+    ARG_UNUSED(conn);
+    ARG_UNUSED(user_data);
+    fsm_post(STATE_EVENT_TX_DONE);
+}
 
 int ble_init(void)
 {
@@ -370,43 +404,9 @@ void ble_disconnect(void)
     }
 }
 
-/**
- * @brief Check if a link can receive packets.
- *
- * A stored CCC of a bonded peer does not count. The central must write the CCC on this link
- * (ccc_notify). Packets go out on an encrypted link only.
- *
- * @param[in] conn  Link to check. Can be NULL.
- *
- * @return true when @p conn is the current link, the link is encrypted and its central turned
- *         notifications on, and false when one of these is not true.
- */
-static bool subscribed(struct bt_conn *conn)
-{
-    return conn
-           && conn == current_conn
-           && ccc_notify
-           && bt_conn_get_security(conn) >= BT_SECURITY_L2;
-}
-
 bool ble_subscribed(void)
 {
     return subscribed(current_conn);
-}
-
-/**
- * @brief Post TX_DONE when the stack sent the last fragment of a packet.
- *
- * The BT host calls this function. The function only posts the event.
- *
- * @param[in] conn       Link. The function does not use this value.
- * @param[in] user_data  The function does not use this value.
- */
-static void record_sent(struct bt_conn *conn, void *user_data)
-{
-    ARG_UNUSED(conn);
-    ARG_UNUSED(user_data);
-    fsm_post(STATE_EVENT_TX_DONE);
 }
 
 int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t sequence, size_t *frag)
