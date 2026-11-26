@@ -4,10 +4,10 @@
 #include "fsm/state_common.h"
 
 /**
- * @brief Enters the initialization state.
+ * @brief Enter the initialization state.
  *
- * @param from The state transitioning into STATE_INIT.
+ * @param[in] from  State that the machine leaves to enter STATE_INIT.
  */
-void state_init_run(state_e from);
+void state_init_run(state_top_e from);
 
 #endif  // STATE_INIT_H

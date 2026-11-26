@@ -3,12 +3,39 @@ IndentWidth: 4
 UseTab: Never
 BreakBeforeBraces: Linux
 ColumnLimit: 100
+BreakBeforeBinaryOperators: NonAssignment
+BreakBinaryOperations: RespectPrecedence
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
-SortIncludes: Never
+AllowShortBlocksOnASingleLine: Never
+SortIncludes: CaseSensitive
+IncludeIsMainRegex: "a^"
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"'
+    Priority: 1
+  - Regex: "^<(zephyr/|nrfx|hal/)"
+    Priority: 3
+  - Regex: "^<[^/]+>$"
+    Priority: 2
+  - Regex: ".*"
+    Priority: 3
 Cpp11BracedListStyle: false
 SpacesBeforeTrailingComments: 2
 IndentCaseLabels: true
-DeriveLineEnding: false
-UseCRLF: false
+LineEnding: LF
 InsertNewlineAtEOF: true
+InsertBraces: true
+AlignConsecutiveMacros: Consecutive
+KeepEmptyLinesAtTheStartOfBlocks: false
+ForEachMacros:
+  - SYS_SLIST_FOR_EACH_NODE
+  - SYS_SLIST_FOR_EACH_CONTAINER
+  - SYS_SLIST_FOR_EACH_NODE_SAFE
+  - SYS_SLIST_FOR_EACH_CONTAINER_SAFE
+  - SYS_DLIST_FOR_EACH_NODE
+  - SYS_DLIST_FOR_EACH_CONTAINER
+  - STRUCT_SECTION_FOREACH
+  - DT_FOREACH_CHILD
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+AttributeMacros: [__aligned, __packed, __unused, __maybe_unused]

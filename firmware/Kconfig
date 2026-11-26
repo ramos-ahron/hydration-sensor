@@ -8,9 +8,9 @@ config FSM_ENUM_STRINGS
 
 choice FSM_MEASURE_MODE
 	prompt "Measurement mode"
-	default FSM_MEASURE_MODE_CONTINUOUS
+	default FSM_MEASURE_MODE_MANUAL
 	help
-	  Measurement behaviour
+	  Selects the M_IDLE -> MEASURING trigger.
 
 config FSM_MEASURE_MODE_MANUAL
 	bool "Manual"
@@ -24,5 +24,27 @@ config FSM_MEASURE_MODE_CONTINUOUS
 	bool "Continuous"
 
 endchoice
+
+config MEASURE_INTERVAL_S
+	int "Measurement Interval (s)"
+	default 60
+	range 1 86400
+	help
+	  Seconds the device waits in the idle measurement state before it starts the next measurement.
+
+config BENCH_ALLOW_USB
+	bool "Allow measuring while connected"
+	help
+	  Lets a measurement start while charger power is present.
+
+config PAIRING_TIMEOUT_S
+	int "PAIRING window"
+	default 60
+	range 10 600
+
+config RECORD_SLOTS
+	int "Record capacity"
+	default 64
+	range 4 512
 
 source "Kconfig.zephyr"

@@ -1,13 +1,14 @@
 #include "fsm/state_machine.h"
+
 #include <zephyr/kernel.h>
 
 /**
  * @brief Application entry point.
  *
- * Initializes the state machine, then blocks on fsm_msgq forever and passes each received
- * event to state_machine_process_event().
+ * The function initializes the state machine. Then it waits on fsm_msgq forever and sends each
+ * event that it receives to state_machine_process_event().
  *
- * @return Never returns; the final return statement is unreachable.
+ * @return The function does not return. The return statement at the end is not reachable.
  */
 int main(void)
 {

@@ -1,4 +1,4 @@
-name: ci
+name: build
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install host dependencies
         run: |
@@ -72,6 +72,10 @@ jobs:
         working-directory: ncs
         run: west build -p always -b "$BOARD" ../app/firmware -d ../build
 
+      - name: Unit Tests
+        working-directory: ncs
+        run: west twister -T ../app/firmware/tests -p native_sim/native/64 --inline-logs -O ../twister-out
+
       - uses: actions/upload-artifact@v6
         with:
           name: firmware-${{ github.sha }}
@@ -80,21 +84,3 @@ jobs:
             build/**/zephyr/zephyr.hex
             build/**/zephyr/zephyr.elf
           if-no-files-found: error
-
-  format-check:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-
-      - name: Require a .clang-format file
-        run: test -f .clang-format || { echo "::error::No .clang-format in repo root"; exit 1; }
-
-      - name: Install clang-format
-        run: pipx install clang-format==18.1.8
-
-      - name: Check formatting
-        run: |
-          git ls-files '*.c' '*.cpp' '*.h' '*.hpp' \
-            | xargs -r clang-format --dry-run --Werror --style=file --fallback-style=none

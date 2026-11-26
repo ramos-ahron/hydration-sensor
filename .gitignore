@@ -3,3 +3,5 @@ build/
 
 # Local filesystem customizations
 .vscode/
+
+graphify-out/

@@ -4,10 +4,10 @@
 #include "fsm/state_common.h"
 
 /**
- * @brief Enters the system sleep state.
+ * @brief Enter the system sleep state.
  *
- * @param from Previous state.
+ * @param[in] from  Previous state.
  */
-void state_sleep_run(state_e from);
+void state_sleep_run(state_top_e from);
 
 #endif  // STATE_SLEEP_H

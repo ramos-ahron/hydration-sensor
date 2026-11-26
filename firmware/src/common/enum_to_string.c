@@ -2,7 +2,7 @@
 
 #ifdef CONFIG_FSM_ENUM_STRINGS
 
-const char *state_to_string(state_e value)
+const char *state_to_string(state_top_e value)
 {
     switch (value) {
         case STATE_INIT:
@@ -32,8 +32,6 @@ const char *state_event_to_string(state_event_e value)
             return "INIT_OK";
         case STATE_EVENT_INIT_FAIL:
             return "INIT_FAIL";
-        case STATE_EVENT_WATCHDOG_RESET:
-            return "WATCHDOG_RESET";
         case STATE_EVENT_PREP_COMPLETE:
             return "PREP_COMPLETE";
         case STATE_EVENT_SLEEP_GUARD:
@@ -54,18 +52,10 @@ const char *state_event_to_string(state_event_e value)
             return "SENSOR_FAULT";
         case STATE_EVENT_COMPUTE_DONE:
             return "COMPUTE_DONE";
-        case STATE_EVENT_RESULT_REJECTED:
-            return "RESULT_REJECTED";
-        case STATE_EVENT_RESULT_TO_BLE:
-            return "RESULT_TO_BLE";
         case STATE_EVENT_RESULT_TO_STORE:
             return "RESULT_TO_STORE";
-        case STATE_EVENT_TRANSMIT_DONE:
-            return "TRANSMIT_DONE";
-        case STATE_EVENT_STORE_DONE_CONTINUOUS:
-            return "STORE_DONE_CONTINUOUS";
-        case STATE_EVENT_STORE_DONE_OTHER:
-            return "STORE_DONE_OTHER";
+        case STATE_EVENT_STORE_DONE:
+            return "STORE_DONE";
         case STATE_EVENT_WRITE_ERROR:
             return "WRITE_ERROR";
         case STATE_EVENT_CONNECTION_COMPLETE:
@@ -74,18 +64,16 @@ const char *state_event_to_string(state_event_e value)
             return "PAIRING_TIMEOUT";
         case STATE_EVENT_LINK_LOST:
             return "LINK_LOST";
-        case STATE_EVENT_READVERTISE:
-            return "READVERTISE";
-        case STATE_EVENT_BATTERY_BELOW:
-            return "BATTERY_BELOW";
-        case STATE_EVENT_BATTERY_RECOVERED:
-            return "BATTERY_RECOVERED";
-        case STATE_EVENT_BATTERY_BELOW_CRITICAL:
-            return "BATTERY_BELOW_CRITICAL";
-        case STATE_EVENT_BATTERY_ABOVE_CRITICAL:
-            return "BATTERY_ABOVE_CRITICAL";
-        case STATE_EVENT_NONE:
-            return "NONE";
+        case STATE_EVENT_BLE_IDLE:
+            return "BLE_IDLE";
+        case STATE_EVENT_BLE_SUBSCRIBED:
+            return "BLE_SUBSCRIBED";
+        case STATE_EVENT_TX_KICK:
+            return "TX_KICK";
+        case STATE_EVENT_TX_DONE:
+            return "TX_DONE";
+        case STATE_EVENT_BATTERY_CHANGED:
+            return "BATTERY_CHANGED";
     }
     return "";
 }
@@ -126,8 +114,6 @@ const char *measurement_state_to_string(measurement_state_e value)
             return "SENSOR_ERROR";
         case MEASUREMENT_STATE_RESULT_READY:
             return "RESULT_READY";
-        case MEASUREMENT_STATE_TRANSMIT:
-            return "TRANSMIT";
         case MEASUREMENT_STATE_STORE_LOCAL:
             return "STORE_LOCAL";
         case MEASUREMENT_STATE_STORAGE_ERROR:
@@ -151,15 +137,15 @@ const char *ble_state_to_string(ble_state_e value)
     return "";
 }
 
-const char *battery_state_to_string(battery_state_e value)
+const char *battery_level_to_string(battery_level_e value)
 {
     switch (value) {
-        case BATTERY_STATE_BATTERY_OK:
-            return "BATTERY_OK";
-        case BATTERY_STATE_BATTERY_LOW:
-            return "BATTERY_LOW";
-        case BATTERY_STATE_BATTERY_CRITICAL:
-            return "BATTERY_CRITICAL";
+        case BATTERY_LEVEL_OK:
+            return "OK";
+        case BATTERY_LEVEL_LOW:
+            return "LOW";
+        case BATTERY_LEVEL_CRITICAL:
+            return "CRITICAL";
     }
     return "";
 }

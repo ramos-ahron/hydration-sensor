@@ -4,13 +4,13 @@
 #include "fsm/state_common.h"
 
 /**
- * @brief Prepares the system to enter a low-power sleep state.
+ * @brief Prepare the system for the low-power sleep state.
  *
- * Performs the required shutdown or cleanup operations before the
- * system enters sleep.
+ * The function stops the pipeline and the advertising, disconnects the link and posts
+ * PREP_COMPLETE.
  *
- * @param from Previous state.
+ * @param[in] from  Previous state.
  */
-void state_sleep_prep_run(state_e from);
+void state_sleep_prep_run(state_top_e from);
 
 #endif  // STATE_SLEEP_PREP_H

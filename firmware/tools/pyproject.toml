@@ -1,0 +1,11 @@
+[project]
+name = "hydration-sensor-tools"
+version = "0.1.0"
+description = "Host tools for the hydration sensor firmware: BLE record decoder (ble_decode.py)."
+requires-python = ">=3.12"
+dependencies = [
+    "bleak>=3.1",
+]
+
+[tool.uv]
+package = false

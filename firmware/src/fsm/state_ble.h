@@ -2,13 +2,13 @@
 #define STATE_BLE_H
 
 #include "fsm/state_common.h"
+
 #include <stdbool.h>
 
 /**
- * @brief Defines the substates of the BLE state machine.
+ * @brief Substates of the BLE state machine.
  *
- * Represents the BLE connection lifecycle, from idle and pairing to
- * connected or disconnected states.
+ * The substates follow the BLE link: idle, pairing, connected and disconnected.
  */
 typedef enum {
     BLE_STATE_BLE_IDLE,
@@ -18,37 +18,29 @@ typedef enum {
 } ble_state_e;
 
 /**
- * @brief Enters the initial BLE substate.
+ * @brief Enter the initial BLE substate.
  *
- * Currently logs the transition to BLE_IDLE without controlling the LED.
+ * The function disconnects the current link and advertises to bonded peers only.
  */
 void state_ble_run(void);
 
 /**
- * @brief Processes an event within the BLE state machine.
+ * @brief Process an event in the BLE state machine.
  *
- * Handles nested state transitions and indicates whether the event was
- * consumed. Uses @p measurement_busy as a guard for BLE state transitions.
+ * The function makes the nested transition that matches the event and tells if it used the event.
+ * When @p measurement_busy is true, the function ignores BUTTON_LONG.
  *
- * @param event Event to process.
- * @param measurement_busy True if the measurement state is Processing,
- *                         Measuring, or Transmitting.
+ * @param[in] event             Event to process.
+ * @param[in] measurement_busy  true when the measurement state is MEASURING or PROCESSING.
  *
- * @return True if a nested transition consumed the event, false otherwise.
+ * @return true when a nested transition used the event, and false when no transition used it.
  */
 bool state_ble_process_event(state_event_e event, bool measurement_busy);
 
 /**
- * @brief Checks whether the BLE subsystem is connected.
+ * @brief Check if the BLE subsystem is pairing.
  *
- * @return true if BLE is connected, false otherwise.
- */
-bool state_ble_connected(void);
-
-/**
- * @brief Checks whether the BLE subsystem is pairing.
- *
- * @return true if BLE is pairing, false otherwise.
+ * @return true when BLE is pairing, and false when it is not.
  */
 bool state_ble_pairing(void);
 
