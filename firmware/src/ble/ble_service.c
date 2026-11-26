@@ -218,8 +218,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     if (conn != current_conn) {
         return;  // The FSM did not get CONNECTION_COMPLETE for this link.
     }
-    bt_conn_unref(current_conn);
     current_conn = NULL;
+    bt_conn_unref(conn);
     ccc_notify = false;
     fsm_post(STATE_EVENT_LINK_LOST);
 }
@@ -368,10 +368,12 @@ void ble_adv_stop(void)
 
 void ble_disconnect(void)
 {
-    if (!current_conn) {
+    struct bt_conn *conn = current_conn;
+
+    if (!conn) {
         return;
     }
-    int err = bt_conn_disconnect(current_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    int err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     if (err) {
         LOG_ERR("Disconnect failed (err %d)", err);
     }
@@ -418,6 +420,9 @@ static void record_sent(struct bt_conn *conn, void *user_data)
 
 int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t sequence, size_t *frag)
 {
+    // This function does not take a reference. If the link drops during the loop,
+    // bt_gatt_notify_cb() returns -ENOTCONN. adv_mode is ADV_OFF while a link is up, so no new
+    // link can use the same connection object before this function returns.
     struct bt_conn *conn = current_conn;
     uint8_t buf[FRAG_MAX];
 
