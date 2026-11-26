@@ -24,6 +24,16 @@ static void battery_led(void)
     }
 }
 
+void state_active_run(state_top_e from)
+{
+    __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
+    ARG_UNUSED(from);
+
+    state_ble_run();
+    battery_led();
+    state_measurement_run();
+}
+
 bool state_active_process_event(state_event_e event)
 {
     if (event == STATE_EVENT_BUTTON_SHORT && state_ble_pairing()) {
@@ -53,14 +63,4 @@ bool state_active_process_event(state_event_e event)
     consumed |= state_measurement_process_event(event);
     consumed |= state_ble_process_event(event, measurement_busy);
     return consumed;
-}
-
-void state_active_run(state_top_e from)
-{
-    __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
-    ARG_UNUSED(from);
-
-    state_ble_run();
-    battery_led();
-    state_measurement_run();
 }

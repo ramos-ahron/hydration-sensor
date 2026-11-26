@@ -10,8 +10,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 
-LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
-
 #define TX_RETRY_MS 10
 
 struct ble_transition {
@@ -19,6 +17,8 @@ struct ble_transition {
     state_event_e event;
     ble_state_e to;
 };
+
+LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
 static const struct ble_transition ble_transitions[] = {
     { BLE_STATE_BLE_IDLE, STATE_EVENT_BUTTON_LONG, BLE_STATE_PAIRING },
@@ -154,9 +154,10 @@ static void send_next_unsent(void)
     }
 }
 
-bool state_ble_pairing(void)
+void state_ble_run(void)
 {
-    return ble_state == BLE_STATE_PAIRING;
+    ble_enter(BLE_STATE_BLE_IDLE, BLE_STATE_BLE_IDLE);
+    LOG_INF("BLE start -> %s", ble_state_to_string(ble_state));
 }
 
 bool state_ble_process_event(state_event_e event, bool measurement_busy)
@@ -196,8 +197,7 @@ bool state_ble_process_event(state_event_e event, bool measurement_busy)
     return false;
 }
 
-void state_ble_run(void)
+bool state_ble_pairing(void)
 {
-    ble_enter(BLE_STATE_BLE_IDLE, BLE_STATE_BLE_IDLE);
-    LOG_INF("BLE start -> %s", ble_state_to_string(ble_state));
+    return ble_state == BLE_STATE_PAIRING;
 }

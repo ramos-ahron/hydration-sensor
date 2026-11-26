@@ -13,6 +13,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+struct state_transition {
+    state_top_e from;
+    state_event_e event;
+    state_top_e to;
+};
+
+struct fsm_timer_slot {
+    struct k_work_delayable dwork;
+    state_event_e event;
+};
+
 LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
 
 /**
@@ -25,12 +36,6 @@ LOG_MODULE_REGISTER(fsm, LOG_LEVEL_INF);
  * @note The queue holds a maximum of 16 events. Each event is a @c state_event_e.
  */
 K_MSGQ_DEFINE(fsm_msgq, sizeof(state_event_e), 16, 4);
-
-struct state_transition {
-    state_top_e from;
-    state_event_e event;
-    state_top_e to;
-};
 
 static const struct state_transition state_transitions[] = {
     { STATE_INIT, STATE_EVENT_INIT_OK, STATE_ACTIVE },
@@ -47,19 +52,7 @@ static const struct state_transition state_transitions[] = {
 
 static state_top_e state;
 
-struct fsm_timer_slot {
-    struct k_work_delayable dwork;
-    state_event_e event;
-};
-
 static struct fsm_timer_slot timers[FSM_TIMER_COUNT];
-
-void fsm_post(state_event_e event)
-{
-    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
-        LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
-    }
-}
 
 /**
  * @brief Post the event of an FSM timer when the timer expires.
@@ -83,17 +76,6 @@ static void timer_handler(struct k_work *work)
         CONTAINER_OF(k_work_delayable_from_work(work), struct fsm_timer_slot, dwork);
 
     fsm_post(slot->event);
-}
-
-void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
-{
-    timers[timer].event = event;
-    (void)k_work_reschedule(&timers[timer].dwork, K_MSEC(ms));
-}
-
-void fsm_timer_stop(fsm_timer_e timer)
-{
-    (void)k_work_cancel_delayable(&timers[timer].dwork);
 }
 
 /**
@@ -145,6 +127,13 @@ static void state_enter(state_top_e from, state_event_e event, state_top_e to)
     }
 }
 
+void fsm_post(state_event_e event)
+{
+    if (k_msgq_put(&fsm_msgq, &event, K_NO_WAIT) != 0) {
+        LOG_WRN("FSM queue full, dropped %s", state_event_to_string(event));
+    }
+}
+
 void state_machine_init(void)
 {
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
@@ -179,4 +168,15 @@ void state_machine_process_event(state_event_e event)
             return;
         }
     }
+}
+
+void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
+{
+    timers[timer].event = event;
+    (void)k_work_reschedule(&timers[timer].dwork, K_MSEC(ms));
+}
+
+void fsm_timer_stop(fsm_timer_e timer)
+{
+    (void)k_work_cancel_delayable(&timers[timer].dwork);
 }

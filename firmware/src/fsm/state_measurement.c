@@ -12,13 +12,13 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 
-LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
-
 struct measurement_transition {
     measurement_state_e from;
     state_event_e event;
     measurement_state_e to;
 };
+
+LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
 static const struct measurement_transition measurement_transitions[] = {
     { MEASUREMENT_STATE_M_IDLE, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_MEASURING },
@@ -188,15 +188,10 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
     }
 }
 
-bool state_measurement_busy(void)
+void state_measurement_run(void)
 {
-    return measurement_state == MEASUREMENT_STATE_MEASURING
-           || measurement_state == MEASUREMENT_STATE_PROCESSING;
-}
-
-bool state_measurement_idle(void)
-{
-    return measurement_state == MEASUREMENT_STATE_M_IDLE;
+    LOG_INF("MEASUREMENT start -> %s", measurement_state_to_string(MEASUREMENT_STATE_M_IDLE));
+    measurement_enter(MEASUREMENT_STATE_M_IDLE, MEASUREMENT_STATE_M_IDLE);
 }
 
 bool state_measurement_process_event(state_event_e event)
@@ -224,8 +219,13 @@ bool state_measurement_process_event(state_event_e event)
     return false;
 }
 
-void state_measurement_run(void)
+bool state_measurement_busy(void)
 {
-    LOG_INF("MEASUREMENT start -> %s", measurement_state_to_string(MEASUREMENT_STATE_M_IDLE));
-    measurement_enter(MEASUREMENT_STATE_M_IDLE, MEASUREMENT_STATE_M_IDLE);
+    return measurement_state == MEASUREMENT_STATE_MEASURING
+           || measurement_state == MEASUREMENT_STATE_PROCESSING;
+}
+
+bool state_measurement_idle(void)
+{
+    return measurement_state == MEASUREMENT_STATE_M_IDLE;
 }

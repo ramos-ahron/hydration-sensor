@@ -13,9 +13,9 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
-
 #define INIT_DWELL_MS 500
+
+LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
 void state_init_run(state_top_e from)
 {
