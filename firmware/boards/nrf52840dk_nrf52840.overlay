@@ -87,8 +87,6 @@
     status = "disabled";
 };
 
-// The board file sets pinctrl-0, pinctrl-1 and pinctrl-names. The spi2_default and spi2_sleep
-// nodes above change their pins to P1.15, P1.14 and P1.13.
 &spi2 {
     status = "okay";
     cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;

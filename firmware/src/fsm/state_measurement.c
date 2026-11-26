@@ -110,13 +110,10 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                 fsm_timer_start(FSM_TIMER_MEASURE, STATE_EVENT_AUTO_TRIGGER,
                                 CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
             }
-            // SLEEP stops FSM_TIMER_MEASURE and only a button press wakes it. Thus only a
-            // MANUAL build can sleep. A TIMER build stays awake for its next measurement.
+
             if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
                 uint32_t guard_ms = SLEEP_GUARD_MS;
 
-                // After a stored measurement, count from the end of the result display time
-                // (detailed_design.md 4.5.1).
                 if (from == MEASUREMENT_STATE_STORE_LOCAL) {
                     guard_ms += RESULT_DISPLAY_MS;
                 }
@@ -172,7 +169,6 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
         case MEASUREMENT_STATE_STORE_LOCAL:
             __ASSERT(from == MEASUREMENT_STATE_RESULT_READY, "STORE_LOCAL entered from %d", from);
 
-            // The function stores every result first. Then the BLE region sends unsent records.
             if (store_result() != 0) {
                 fsm_post(STATE_EVENT_WRITE_ERROR);
                 break;

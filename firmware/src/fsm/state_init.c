@@ -15,7 +15,6 @@
 
 LOG_MODULE_DECLARE(fsm, LOG_LEVEL_INF);
 
-// Time in ms that INIT stays visible before the FSM timer posts INIT_OK or INIT_FAIL.
 #define INIT_DWELL_MS 500
 
 void state_init_run(state_top_e from)
@@ -31,7 +30,6 @@ void state_init_run(state_top_e from)
         LOG_WRN("INIT after watchdog reset");
     }
 
-    // A reset of the MCU does not reset the MAX30009. Stop a drive that is still on.
     int afe_err = afe_init();
 
     if (afe_err == 0) {

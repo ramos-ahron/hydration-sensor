@@ -5,7 +5,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/** Maximum size of one record, in bytes. */
 #define RECORD_MAX_LEN 64
 
 // TODO: Add the uptime to the record and to the BLE packet.

@@ -82,7 +82,6 @@ static void timer_handler(struct k_work *work)
     const struct fsm_timer_slot *slot =
         CONTAINER_OF(k_work_delayable_from_work(work), struct fsm_timer_slot, dwork);
 
-    // Post the event of the timer that expired.
     fsm_post(slot->event);
 }
 
@@ -94,8 +93,6 @@ void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
 
 void fsm_timer_stop(fsm_timer_e timer)
 {
-    // The _sync form only waits for timer_handler(). It cannot take back an event that the
-    // handler already posted, so it gives no benefit here.
     (void)k_work_cancel_delayable(&timers[timer].dwork);
 }
 
@@ -116,7 +113,6 @@ static void state_enter(state_top_e from, state_event_e event, state_top_e to)
             state_event_to_string(event));
     state = to;
 
-    // Stop all timers and clear all LED requests.
     for (int i = 0; i < FSM_TIMER_COUNT; i++) {
         fsm_timer_stop(i);
     }
@@ -169,7 +165,6 @@ void state_machine_process_event(state_event_e event)
             event = STATE_EVENT_BATTERY_MARGIN_OK;
         }
     } else if (state == STATE_SHUTDOWN && event == STATE_EVENT_BUTTON_SHORT) {
-        // Show the user that the device is off because of the battery.
         led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_FAST, 0, 2000);
         return;
     }

@@ -12,7 +12,6 @@ void state_shutdown_run(state_top_e from)
              "SHUTDOWN entered from %d", from);
     ARG_UNUSED(from);
 
-    // A battery event can leave ACTIVE during a sweep. Turn the drive off first.
     pipeline_stop();
     ble_adv_stop();
     ble_disconnect();

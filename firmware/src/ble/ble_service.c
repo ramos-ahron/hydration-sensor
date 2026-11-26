@@ -16,12 +16,10 @@
 
 LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 
-/** Largest notification payload that the stack can send: ATT MTU - 3. */
-#define FRAG_MAX (CONFIG_BT_L2CAP_TX_MTU - 3)
-
-/** Static 128-bit UUIDs of the service and the record. TODO: Decide if the UUIDs must change. */
+#define FRAG_MAX        (CONFIG_BT_L2CAP_TX_MTU - 3)
 #define SVC_UUID_VAL    BT_UUID_128_ENCODE(0x3f6c0001, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
 #define RECORD_UUID_VAL BT_UUID_128_ENCODE(0x3f6c0002, 0x8a4e, 0x4b5d, 0x9c2a, 0x6e1f0b7d4a21)
+#define RECORD_ATTR     (&hydration_svc.attrs[1])
 
 static ssize_t ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr, uint16_t value);
 
@@ -34,9 +32,6 @@ BT_GATT_SERVICE_DEFINE(hydration_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_12
                                                  BT_GATT_PERM_READ_ENCRYPT
                                                      | BT_GATT_PERM_WRITE_ENCRYPT));
 
-/** Characteristic declaration of the record. The notify call uses it. */
-#define RECORD_ATTR (&hydration_svc.attrs[1])
-
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
@@ -44,6 +39,10 @@ static const struct bt_data ad[] = {
 
 static const struct bt_data sd[] = {
     BT_DATA_BYTES(BT_DATA_UUID128_ALL, SVC_UUID_VAL),
+};
+
+static const struct bt_conn_auth_cb auth_cb = {
+    .pairing_accept = pairing_accept,
 };
 
 /**
@@ -190,13 +189,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
         LOG_WRN("Connection failed (err 0x%02x)", err);
         return;
     }
-    // A central can connect at the instant that the pairing window closes. This check stops it.
     if (!pairing_open && !bt_le_bond_exists(BT_ID_DEFAULT, bt_conn_get_dst(conn))) {
         LOG_WRN("Unbonded peer outside the pairing window, disconnecting");
         (void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         return;
     }
-    // The stack stopped connectable advertising when the central connected.
     adv_mode = ADV_OFF;
     ccc_notify = false;
     current_conn = bt_conn_ref(conn);
@@ -216,7 +213,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     LOG_INF("Disconnected (reason 0x%02x)", reason);
     if (conn != current_conn) {
-        return;  // The FSM did not get CONNECTION_COMPLETE for this link.
+        return;
     }
     current_conn = NULL;
     bt_conn_unref(conn);
@@ -262,12 +259,6 @@ static enum bt_security_err pairing_accept(struct bt_conn *conn,
     }
     return BT_SECURITY_ERR_SUCCESS;
 }
-
-/* There are no display or keyboard callbacks. Thus the device is NoInputNoOutput and LE Secure
- * Connections uses Just Works. */
-static const struct bt_conn_auth_cb auth_cb = {
-    .pairing_accept = pairing_accept,
-};
 
 /**
  * @brief Log the end of a pairing.
@@ -420,9 +411,6 @@ static void record_sent(struct bt_conn *conn, void *user_data)
 
 int ble_send(const uint8_t *rec, size_t len, uint16_t session_id, uint16_t sequence, size_t *frag)
 {
-    // This function does not take a reference. If the link drops during the loop,
-    // bt_gatt_notify_cb() returns -ENOTCONN. adv_mode is ADV_OFF while a link is up, so no new
-    // link can use the same connection object before this function returns.
     struct bt_conn *conn = current_conn;
     uint8_t buf[FRAG_MAX];
 

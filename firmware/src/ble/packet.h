@@ -67,6 +67,16 @@
 #define PACKET_VERSION 3
 
 /**
+ * @brief Size of the fragment header in bytes.
+ *
+ * Each BLE notification carries one fragment. Each fragment has this header, also when the
+ * packet fits in one fragment.
+ *
+ * The receiver joins the fragments with the same (session_id, sequence) in index order.
+ */
+#define PACKET_FRAG_HDR_LEN 6
+
+/**
  * @brief Packet field table.
  *
  * Each row is X(name, wire type, scale, unit). The order of the rows is the order on the wire.
@@ -156,16 +166,6 @@ size_t packet_serialize(const struct packet *pkt, uint8_t out[PACKET_SIZE]);
  * @retval -EBADMSG   the CRC does not match
  */
 int packet_parse(const uint8_t *buf, size_t len, struct packet *pkt);
-
-/**
- * @brief Size of the fragment header in bytes.
- *
- * Each BLE notification carries one fragment. Each fragment has this header, also when the
- * packet fits in one fragment.
- *
- * The receiver joins the fragments with the same (session_id, sequence) in index order.
- */
-#define PACKET_FRAG_HDR_LEN 6
 
 /**
  * @brief Calculates the number of fragments for a packet.

@@ -166,16 +166,13 @@ int safety_init(void)
         hw_wdt = NULL;
     }
 #endif  // defined(CONFIG_TASK_WDT_HW_FALLBACK) && defined(CONFIG_WATCHDOG)
+
     err = task_wdt_init(hw_wdt);
     wdt_ok = err == 0;
     if (!wdt_ok) {
         LOG_WRN("task watchdog init failed (err %d); drive runs unguarded", err);
     }
-    /*
-     * Arm the hardware fallback now. The nRF WDT continues to run after a soft reset, and
-     * nothing can stop it. Thus the firmware must feed it from boot, and not only from the
-     * first measurement.
-     */
+
     safety_drive_begin();
     safety_drive_end();
 
@@ -254,8 +251,6 @@ bool safety_reset_was_watchdog(void)
     return reset_wdt;
 }
 
-// These getters do not lock batt_lock. Each one reads one aligned word, and the Cortex-M4 reads
-// it in one access. No caller needs the voltage and the level from the same reading.
 int battery_mv(void)
 {
     return batt_mv_last;

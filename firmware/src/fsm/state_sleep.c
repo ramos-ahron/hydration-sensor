@@ -12,9 +12,5 @@ void state_sleep_run(state_top_e from)
     __ASSERT(from == STATE_SLEEP_PREP, "SLEEP entered from %d", from);
     ARG_UNUSED(from);
 
-    /**
-     * System ON idle: the main loop waits and the kernel idles. A short press wakes the device
-     * to INIT. The battery check handles the shutdown.
-     */
     led_request(LED_PRIO_POWER, LED_WHITE, LED_PAT_BEAT, SLEEP_BEAT_MS, 0);
 }

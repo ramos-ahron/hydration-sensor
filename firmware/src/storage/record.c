@@ -16,8 +16,6 @@ LOG_MODULE_REGISTER(record, LOG_LEVEL_INF);
 #define SLOT_KEY_LEN 16
 #define SLOT_BUF_LEN (HDR + RECORD_MAX_LEN)
 
-// slot_key() uses id % SLOTS. The slot sequence stays continuous at the 16-bit ID wrap only
-// if SLOTS divides 65536.
 BUILD_ASSERT(65536 % SLOTS == 0, "CONFIG_RECORD_SLOTS must be a power of 2");
 
 struct meta {
@@ -81,17 +79,14 @@ static int set_cb(const char *key, size_t len, settings_read_cb read_cb, void *a
 {
     const char *next;
 
-    // Read metadata. An exact match sets next to NULL.
     if (settings_name_steq(key, "meta", &next) && !next) {
         return read_cb(arg, &m, sizeof(m)) < 0 ? -EIO : 0;
     }
 
-    // Read the slot keys "r/<slot>".
     if (settings_name_steq(key, "r", &next) && next) {
         unsigned long s = strtoul(next, NULL, 10);
         uint8_t hdr[HDR];
 
-        // This load does not check the length byte. rd_slot() checks it before each copy.
         if (s < SLOTS && len >= HDR && read_cb(arg, hdr, HDR) == HDR) {
             mirror[s] = (struct slot){ hdr[0], hdr[1], 1 };
         }
@@ -134,7 +129,6 @@ static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *ar
     uint8_t *buf = param;
     const ssize_t n = read_cb(arg, buf, SLOT_BUF_LEN);
 
-    // settings_load_subtree_direct() ignores this return value. Length 0 makes rd_slot() fail.
     if (n < HDR || (size_t)n != len || len != HDR + (size_t)buf[1]) {
         buf[1] = 0;
         return -EIO;
@@ -158,7 +152,6 @@ static int rd_slot(uint16_t id, uint8_t *buf)
 {
     char key[SLOT_KEY_LEN];
 
-    // A missing key does not call rd_cb(). Length 0 then marks the slot as not read.
     buf[1] = 0;
     slot_key(key, id);
     if (settings_load_subtree_direct(key, rd_cb, buf) || buf[1] < 1 || buf[1] > RECORD_MAX_LEN) {
@@ -267,11 +260,6 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id)
         if (nm.count < SLOTS) {
             nm.count++;
         }
-        // Write the record first and the metadata second. Then a power cut cannot leave
-        // metadata that points to a missing record. A power cut between the two writes can
-        // replace the oldest record without a lost count. This is accepted: the window is one
-        // NVS write, and the record bytes keep their own session and sequence.
-        // m.next_id is the ID of this record. nm.next_id is the ID of the next record.
         rc = wr_slot(m.next_id, sent, rec, len);
         if (!rc) {
             rc = wr_meta(&nm);

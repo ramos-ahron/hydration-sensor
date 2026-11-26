@@ -18,12 +18,10 @@ static void button_cb(struct input_event *evt, void *user_data)
 {
     ARG_UNUSED(user_data);
 
-    // Use key presses only. Ignore key releases.
     if (evt->type != INPUT_EV_KEY || evt->value != 1) {
         return;
     }
 
-    // The board overlay sets the key codes.
     state_event_e event;
     switch (evt->code) {
         case INPUT_KEY_A:

@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(pipeline, LOG_LEVEL_INF);
 
 #define PIPELINE_STACK_SIZE 2048
 
-// Lower priority than the FSM thread, so the FSM stays responsive during a step.
 #define PIPELINE_PRIORITY 5
 
 static struct result result;
@@ -53,7 +52,7 @@ static bool failed(int err, const char *name)
 static void measure_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
-    // A reject is stored too. INT16_MIN marks each value that the step did not read.
+
     result = (struct result){ .temp_centi_c = INT16_MIN,
                               .a_rms_mm_s2 = INT16_MIN,
                               .battery_mv = INT16_MIN };
@@ -116,10 +115,6 @@ static void process_handler(struct k_work *work)
     fsm_post(STATE_EVENT_COMPUTE_DONE);
 }
 
-/*
- * The steps block their queue while they run. They get their own queue, so a step that waits for
- * a MAX30009 trigger on the system work queue (MAX30009_TRIGGER_GLOBAL_THREAD) still wakes.
- */
 static K_THREAD_STACK_DEFINE(pipeline_stack, PIPELINE_STACK_SIZE);
 static struct k_work_q pipeline_q;
 

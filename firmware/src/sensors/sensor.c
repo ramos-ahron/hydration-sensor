@@ -18,7 +18,6 @@ static const struct device *const temp_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(temp
 
 static struct override ovr;
 static float window[ACCEL_WINDOW_SAMPLES][3];
-// The shell ("hs ctx") and the pipeline thread both call get_motion().
 static K_MUTEX_DEFINE(window_lock);
 
 float a_rms(const float (*a)[3], size_t n)
@@ -91,8 +90,7 @@ int get_motion(float *rms)
             window[i][k] = sensor_value_to_float(&v[k]);
         }
     }
-    /* A stuck or disconnected sensor returns the same value for every sample. With real MEMS
-     * noise, the three axes do not stay bit-identical for a full window. */
+
     bool stuck = true;
     for (size_t i = 1; i < ACCEL_WINDOW_SAMPLES && stuck; i++) {
         stuck = memcmp(window[i], window[0], sizeof(window[0])) == 0;
@@ -122,8 +120,7 @@ int get_temp(int16_t *centi_c)
         || sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP, &v) != 0) {
         return -EIO;
     }
-    /* v.val1 is the integer part in C. v.val2 is the fraction in millionths of 1 C.
-     * The +/-5000 before the division rounds to the nearest 0.01 C. */
+
     int32_t cc = v.val1 * 100 + (v.val2 + (v.val2 >= 0 ? 5000 : -5000)) / 10000;
     if (cc <= INT16_MIN || cc > INT16_MAX) {
         return -EIO;

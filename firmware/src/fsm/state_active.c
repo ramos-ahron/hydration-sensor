@@ -60,7 +60,6 @@ void state_active_run(state_top_e from)
     __ASSERT(from == STATE_INIT, "ACTIVE entered from %d", from);
     ARG_UNUSED(from);
 
-    // Enter the initial substates: BLE_IDLE and M_IDLE.
     state_ble_run();
     battery_led();
     state_measurement_run();
