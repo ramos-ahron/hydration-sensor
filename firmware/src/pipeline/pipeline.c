@@ -11,13 +11,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#define PIPELINE_STACK_SIZE 2048
+#define PIPELINE_PRIORITY   5
+
 LOG_MODULE_REGISTER(pipeline, LOG_LEVEL_INF);
 
-#define PIPELINE_STACK_SIZE 2048
-
-#define PIPELINE_PRIORITY 5
-
 static struct result result;
+
+static K_THREAD_STACK_DEFINE(pipeline_stack, PIPELINE_STACK_SIZE);
+static struct k_work_q pipeline_q;
 
 /**
  * @brief Checks the return value of a stub.
@@ -114,9 +116,6 @@ static void process_handler(struct k_work *work)
     }
     fsm_post(STATE_EVENT_COMPUTE_DONE);
 }
-
-static K_THREAD_STACK_DEFINE(pipeline_stack, PIPELINE_STACK_SIZE);
-static struct k_work_q pipeline_q;
 
 static K_WORK_DEFINE(measure_work, measure_handler);
 static K_WORK_DEFINE(process_work, process_handler);

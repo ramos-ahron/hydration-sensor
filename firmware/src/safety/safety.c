@@ -16,9 +16,9 @@
 #include <hal/nrf_power.h>
 #endif  // defined(CONFIG_HAS_NRFX)
 
-LOG_MODULE_REGISTER(safety, LOG_LEVEL_INF);
-
 #define BATT_UNKNOWN (-1)
+
+LOG_MODULE_REGISTER(safety, LOG_LEVEL_INF);
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 #define HAS_BATT_ADC 1
