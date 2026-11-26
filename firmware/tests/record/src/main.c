@@ -1,6 +1,7 @@
 #include "storage/record.h"
 
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <zephyr/settings/settings.h>
@@ -164,4 +165,21 @@ ZTEST(record, test_reload)
     zassert_equal(out[0], SLOTS + 1);
     zassert_equal(sent, (SLOTS + 1) % 2);
     zassert_equal(record_unsent(), SLOTS / 2);
+}
+
+ZTEST(record, test_missing_slot)
+{
+    uint8_t out[RECORD_MAX_LEN];
+    char key[16];
+    size_t len;
+    uint16_t id;
+
+    put_n(1, false);
+    id = put_n(2, false);
+    snprintf(key, sizeof(key), "hs/r/%u", id % SLOTS);
+    zassert_ok(settings_delete(key));
+    zassert_equal(record_store_peek(0, out, &len, NULL, NULL), -EIO);
+    zassert_equal(record_mark_sent(id), -EIO);
+    zassert_ok(record_store_peek(1, out, &len, NULL, NULL));
+    zassert_equal(len, 3);
 }
