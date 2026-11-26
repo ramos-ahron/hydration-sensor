@@ -20,6 +20,18 @@ static struct override ovr;
 static float window[ACCEL_WINDOW_SAMPLES][3];
 static K_MUTEX_DEFINE(window_lock);
 
+/**
+ * @brief Checks that a device can be used.
+ *
+ * @param[in] dev  Device to check. Can be NULL.
+ *
+ * @return true when @p dev is not NULL and is ready, and false when it is not.
+ */
+static bool dev_usable(const struct device *dev)
+{
+    return dev != NULL && device_is_ready(dev);
+}
+
 float a_rms(const float (*a)[3], size_t n)
 {
     if (n == 0) {
@@ -42,18 +54,6 @@ float a_rms(const float (*a)[3], size_t n)
         }
     }
     return sqrtf(sum / (float)n);
-}
-
-/**
- * @brief Checks that a device can be used.
- *
- * @param[in] dev  Device to check. Can be NULL.
- *
- * @return true when @p dev is not NULL and is ready, and false when it is not.
- */
-static bool dev_usable(const struct device *dev)
-{
-    return dev != NULL && device_is_ready(dev);
 }
 
 int sensor_init(void)

@@ -9,14 +9,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
-LOG_MODULE_REGISTER(record, LOG_LEVEL_INF);
-
 #define SLOTS        CONFIG_RECORD_SLOTS
 #define HDR          2
 #define SLOT_KEY_LEN 16
 #define SLOT_BUF_LEN (HDR + RECORD_MAX_LEN)
-
-BUILD_ASSERT(65536 % SLOTS == 0, "CONFIG_RECORD_SLOTS must be a power of 2");
 
 struct meta {
     uint16_t next_id;
@@ -30,6 +26,10 @@ struct slot {
     uint8_t len;
     uint8_t valid;
 };
+
+LOG_MODULE_REGISTER(record, LOG_LEVEL_INF);
+
+BUILD_ASSERT(65536 % SLOTS == 0, "CONFIG_RECORD_SLOTS must be a power of 2");
 
 static struct meta m;
 static struct slot mirror[SLOTS];
@@ -213,6 +213,34 @@ static uint16_t oldest_id(void)
     return (uint16_t)(m.next_id - m.count);
 }
 
+/**
+ * @brief Reads record @p id from flash and copies it to the caller.
+ *
+ * The caller must hold @c lock.
+ *
+ * @param[in]  id    Record ID.
+ * @param[out] rec   Receives the record. Must hold RECORD_MAX_LEN bytes.
+ * @param[out] len   Receives the size of the record in bytes.
+ * @param[out] sent  Receives the sent flag. Can be NULL.
+ *
+ * @retval 0     The record is copied.
+ * @retval -EIO  The read failed. The outputs do not change.
+ */
+static int out(uint16_t id, uint8_t *rec, size_t *len, bool *sent)
+{
+    uint8_t buf[SLOT_BUF_LEN];
+    int rc = rd_slot(id, buf);
+
+    if (!rc) {
+        memcpy(rec, buf + HDR, buf[1]);
+        *len = buf[1];
+        if (sent) {
+            *sent = buf[0];
+        }
+    }
+    return rc;
+}
+
 int record_init(void)
 {
     int rc = 0;
@@ -276,31 +304,27 @@ int record_put(const uint8_t *rec, size_t len, bool sent, uint16_t *id)
     return rc;
 }
 
-/**
- * @brief Reads record @p id from flash and copies it to the caller.
- *
- * The caller must hold @c lock.
- *
- * @param[in]  id    Record ID.
- * @param[out] rec   Receives the record. Must hold RECORD_MAX_LEN bytes.
- * @param[out] len   Receives the size of the record in bytes.
- * @param[out] sent  Receives the sent flag. Can be NULL.
- *
- * @retval 0     The record is copied.
- * @retval -EIO  The read failed. The outputs do not change.
- */
-static int out(uint16_t id, uint8_t *rec, size_t *len, bool *sent)
+uint16_t record_next_id(void)
+{
+    return m.next_id;
+}
+
+int record_mark_sent(uint16_t id)
 {
     uint8_t buf[SLOT_BUF_LEN];
-    int rc = rd_slot(id, buf);
+    int rc = -ENOENT;
 
-    if (!rc) {
-        memcpy(rec, buf + HDR, buf[1]);
-        *len = buf[1];
-        if (sent) {
-            *sent = buf[0];
+    k_mutex_lock(&lock, K_FOREVER);
+    if ((uint16_t)(id - oldest_id()) < m.count) {
+        rc = rd_slot(id, buf);
+        if (!rc && !buf[0]) {
+            rc = wr_slot(id, true, buf + HDR, buf[1]);
+            if (!rc) {
+                mirror[id % SLOTS].sent = 1;
+            }
         }
     }
+    k_mutex_unlock(&lock);
     return rc;
 }
 
@@ -324,25 +348,6 @@ int record_oldest_unsent(uint8_t *rec, size_t *len, uint16_t *id)
     return rc;
 }
 
-int record_mark_sent(uint16_t id)
-{
-    uint8_t buf[SLOT_BUF_LEN];
-    int rc = -ENOENT;
-
-    k_mutex_lock(&lock, K_FOREVER);
-    if ((uint16_t)(id - oldest_id()) < m.count) {
-        rc = rd_slot(id, buf);
-        if (!rc && !buf[0]) {
-            rc = wr_slot(id, true, buf + HDR, buf[1]);
-            if (!rc) {
-                mirror[id % SLOTS].sent = 1;
-            }
-        }
-    }
-    k_mutex_unlock(&lock);
-    return rc;
-}
-
 int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bool *sent)
 {
     int rc = -ENOENT;
@@ -358,11 +363,6 @@ int record_store_peek(uint16_t back, uint8_t *rec, size_t *len, uint16_t *id, bo
     }
     k_mutex_unlock(&lock);
     return rc;
-}
-
-uint16_t record_next_id(void)
-{
-    return m.next_id;
 }
 
 uint16_t record_count(void)
@@ -392,11 +392,6 @@ uint16_t record_session_id(void)
     return m.boot;
 }
 
-void record_inject_fault(bool on)
-{
-    fault = on;
-}
-
 int record_clear(void)
 {
     struct meta nm;
@@ -424,6 +419,11 @@ int record_clear(void)
     }
     k_mutex_unlock(&lock);
     return rc;
+}
+
+void record_inject_fault(bool on)
+{
+    fault = on;
 }
 
 #ifdef CONFIG_SHELL

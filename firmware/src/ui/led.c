@@ -13,14 +13,6 @@
 #define LED_FLASH_MS 100
 #define LED_NEVER    INT64_MAX
 
-#if LED_HAVE_PINS
-static const struct gpio_dt_spec leds[] = {
-    GPIO_DT_SPEC_GET(DT_ALIAS(red_led), gpios),
-    GPIO_DT_SPEC_GET(DT_ALIAS(green_led), gpios),
-    GPIO_DT_SPEC_GET(DT_ALIAS(blue_led), gpios),
-};
-#endif  // LED_HAVE_PINS
-
 /**
  * @brief One LED request, held in the slot for its priority.
  */
@@ -32,6 +24,14 @@ struct led_slot {
     int64_t start_ms;
     int64_t end_ms;
 };
+
+#if LED_HAVE_PINS
+static const struct gpio_dt_spec leds[] = {
+    GPIO_DT_SPEC_GET(DT_ALIAS(red_led), gpios),
+    GPIO_DT_SPEC_GET(DT_ALIAS(green_led), gpios),
+    GPIO_DT_SPEC_GET(DT_ALIAS(blue_led), gpios),
+};
+#endif  // LED_HAVE_PINS
 
 static struct led_slot slots[LED_PRIO_COUNT];
 static led_color_e cur_color;
@@ -186,6 +186,31 @@ static void led_work_fn(struct k_work *work)
     led_update();
 }
 
+#if LED_HAVE_PINS
+/**
+ * @brief Configure the red, green and blue LED GPIOs as outputs that start in the off state.
+ *
+ * SYS_INIT() runs this function at the APPLICATION init level.
+ *
+ * @return 0 on success, -ENODEV when an LED GPIO is not ready, or the error that
+ *         gpio_pin_configure_dt() returns.
+ */
+static int led_init(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
+        if (!gpio_is_ready_dt(&leds[i])) {
+            return -ENODEV;
+        }
+        int err = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
+        if (err) {
+            return err;
+        }
+    }
+    return 0;
+}
+SYS_INIT(led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+#endif  // LED_HAVE_PINS
+
 void led_request(led_prio_e prio, led_color_e color, led_pattern_e pattern, uint32_t period_ms,
                  uint32_t duration_ms)
 {
@@ -237,28 +262,3 @@ led_color_e led_current(void)
 {
     return cur_color;
 }
-
-#if LED_HAVE_PINS
-/**
- * @brief Configure the red, green and blue LED GPIOs as outputs that start in the off state.
- *
- * SYS_INIT() runs this function at the APPLICATION init level.
- *
- * @return 0 on success, -ENODEV when an LED GPIO is not ready, or the error that
- *         gpio_pin_configure_dt() returns.
- */
-static int led_init(void)
-{
-    for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
-        if (!gpio_is_ready_dt(&leds[i])) {
-            return -ENODEV;
-        }
-        int err = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
-        if (err) {
-            return err;
-        }
-    }
-    return 0;
-}
-SYS_INIT(led_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
-#endif  // LED_HAVE_PINS
