@@ -102,7 +102,7 @@ state Active {
   }
 }
 
-Active --> SLEEP_PREP : M_IDLE for >= 10 s (result display done)\nand electrodes detached\nand Mode != Continuous
+Active --> SLEEP_PREP : M_IDLE for >= 10 s (result display done)\nand electrodes detached\nand Mode = Manual
 Active --> SHUTDOWN : BATTERY_CRITICAL
 
 SLEEP_PREP --> SLEEP : Prep complete

@@ -106,7 +106,9 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
                 fsm_timer_start(FSM_TIMER_MEASURE, STATE_EVENT_AUTO_TRIGGER,
                                 CONFIG_MEASURE_INTERVAL_S * MSEC_PER_SEC);
             }
-            if (!IS_ENABLED(CONFIG_FSM_MEASURE_MODE_CONTINUOUS)) {
+            // SLEEP stops FSM_TIMER_MEASURE and only a button press wakes it. Thus only a
+            // MANUAL build can sleep. A TIMER build stays awake for its next measurement.
+            if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
                 uint32_t guard_ms = SLEEP_GUARD_MS;
 
                 // After a stored measurement, add time so that the result LED stays visible.

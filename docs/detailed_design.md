@@ -1510,7 +1510,7 @@ stateDiagram-v2
         }
     }
 
-    Active --> SLEEP_PREP: M_IDLE 10 s + electrodes detached + not CONTINUOUS + not PAIRING + pipeline idle
+    Active --> SLEEP_PREP: M_IDLE 10 s + electrodes detached + MANUAL build + not PAIRING + pipeline idle
     Active --> SHUTDOWN: battery critical (periodic check)
     SLEEP_PREP --> SLEEP: prep complete
     SLEEP --> INIT: short press
@@ -1526,7 +1526,7 @@ The battery has no state region. A periodic check reads it in every device state
 | ---- | ----------- |
 | Rejected readings | Every reject, whether a quality reject or a device fault, produces a stored record with its reason (§4.9.1). `RESULT_READY` never discards a reading. A reject shows no result color on the LED. |
 | Device faults | AFE not responding, SPI/FIFO error after retries, sensor detached, and step timeout are device faults. The pipeline stops the AFE drive before it assembles the reject. On entry, `SENSOR_ERROR` stores the reject record with the fault reason, then waits for a short-press acknowledgement. Quality rejects (contact, motion, temperature, spectral, fit, low Q) return to `M_IDLE` through `RESULT_READY` and `STORE_LOCAL`. |
-| Continuous mode | Every cycle runs the full pipeline, including the motion gate (§2.1.3). A build-time minimum interval separates measurements. Continuous builds never enter `SLEEP`. |
+| Continuous mode | Every cycle runs the full pipeline, including the motion gate (§2.1.3). A build-time minimum interval separates measurements. Continuous and TIMER builds never enter `SLEEP`, because only a button press wakes `SLEEP` and the measurement timer stops there. <!-- REVIEW 2026-11-25: A TIMER build with an interval above 10 s slept before its first measurement. The team must confirm this choice. --> |
 | Local copy | Every record is stored locally before it is sent. The store is bounded: when full it overwrites the oldest record and increments a lost-record counter (§3.2). Once the peer subscribes on an encrypted link, unsent records go out oldest first, one at a time. A record is marked sent only when its last fragment has left the radio; if the link drops first, it is sent again after reconnection and the consumer drops the duplicate by session and sequence. A full TX buffer is retried while the link is up and never blocks the state machine. |
 | BLE advertising | `BLE_IDLE` advertises only to bonded peers (filter accept list), or not at all if no bond exists. `PAIRING` opens connectable advertising with bonding and a build-time timeout. The consumer is a phone or test logger (R.9); watch support is stretch (R.14). |
 | Charging lockout | `SAFETY_CHECK` rejects every measurement while VBUS/charger power is present (§4.10.2). A bench build may enable a USB override only for disconnected-electronics or phantom work (§4.1.5); it sets a flag in every record and is prohibited for body-connected measurement. The pipeline also checks VBUS, the critical battery level, and any stop request immediately before every drive step and on every AFE status poll (about every 2 ms during the sweep), and stops the drive when any of them fails. That reading is stored as a reject: CHARGING for VBUS, UNSAFE for a stop request or critical battery. |
