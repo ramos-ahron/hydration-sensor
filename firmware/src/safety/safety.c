@@ -254,6 +254,8 @@ bool safety_reset_was_watchdog(void)
     return reset_wdt;
 }
 
+// These getters do not lock batt_lock. Each one reads one aligned word, and the Cortex-M4 reads
+// it in one access. No caller needs the voltage and the level from the same reading.
 int battery_mv(void)
 {
     return batt_mv_last;

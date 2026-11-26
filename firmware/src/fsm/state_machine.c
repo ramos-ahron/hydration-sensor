@@ -71,8 +71,10 @@ void fsm_post(state_event_e event)
  */
 static void timer_handler(struct k_work *work)
 {
-    // TODO: A timer restart at the time of expiry can post the new event early. Cancel the
-    // timer before the restart.
+    // Only FSM_TIMER_INIT has two events, and INIT starts it again only after it expired, so the
+    // slot->event read cannot see a new event. An expiry can still put an event in fsm_msgq
+    // just before a restart. A cancel cannot remove that event. The worst result is an early
+    // sleep, an early measurement or an early end of PAIRING, so the code accepts it.
 
     /**
      * CONTAINER_OF() gets the timer slot from the pointer to its dwork member.
@@ -92,6 +94,8 @@ void fsm_timer_start(fsm_timer_e timer, state_event_e event, uint32_t ms)
 
 void fsm_timer_stop(fsm_timer_e timer)
 {
+    // The _sync form only waits for timer_handler(). It cannot take back an event that the
+    // handler already posted, so it gives no benefit here.
     (void)k_work_cancel_delayable(&timers[timer].dwork);
 }
 
