@@ -7,7 +7,7 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT(PACKET_SIZE == 17, "BLE packet version 2 is 17 bytes");
+BUILD_ASSERT(PACKET_SIZE == 18, "BLE packet version 3 is 18 bytes");
 
 /* Byte offset of the CRC. It is the last field, so the CRC covers bytes 0 to PACKET_CRC_OFF - 1. */
 #define PACKET_CRC_OFF (PACKET_SIZE - PACKET_WIRE_SIZE_u16)

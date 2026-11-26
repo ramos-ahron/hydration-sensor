@@ -54,8 +54,8 @@ state Active {
     state M_IDLE : LED: hydration result for 10 s
     state MEASURING : LED: magenta SLOW
     state PROCESSING : LED: magenta FAST
-    state SENSOR_ERROR : LED: red SLOW
-    state RESULT_READY : LED: hydration result (as M_IDLE)
+    state SENSOR_ERROR : LED: red SLOW\nStores the device-fault reject on entry
+    state RESULT_READY : LED: none (no FTI category in this build)
     state STORE_LOCAL : LED: none\nStores the record as unsent, kicks the BLE sender
     state STORAGE_ERROR : LED: yellow SLOW
 
@@ -74,8 +74,7 @@ state Active {
 
     SENSOR_ERROR --> M_IDLE : Button 1: Short Press\n(ack / clear fault)
 
-    RESULT_READY --> M_IDLE : reject_flag = true\n(discard measurement)
-    RESULT_READY --> STORE_LOCAL : reject_flag = false\n(store before send)
+    RESULT_READY --> STORE_LOCAL : always, also a reject\n(store before send)
 
     STORE_LOCAL --> M_IDLE : Stored
     STORE_LOCAL --> STORAGE_ERROR : Write error /\nstorage full

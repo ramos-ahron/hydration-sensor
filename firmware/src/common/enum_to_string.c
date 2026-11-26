@@ -52,8 +52,6 @@ const char *state_event_to_string(state_event_e value)
             return "SENSOR_FAULT";
         case STATE_EVENT_COMPUTE_DONE:
             return "COMPUTE_DONE";
-        case STATE_EVENT_RESULT_REJECTED:
-            return "RESULT_REJECTED";
         case STATE_EVENT_RESULT_TO_STORE:
             return "RESULT_TO_STORE";
         case STATE_EVENT_STORE_DONE:

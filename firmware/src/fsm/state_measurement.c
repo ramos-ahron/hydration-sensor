@@ -30,7 +30,6 @@ static const struct measurement_transition measurement_transitions[] = {
     { MEASUREMENT_STATE_PROCESSING, STATE_EVENT_SENSOR_FAULT, MEASUREMENT_STATE_SENSOR_ERROR },
     { MEASUREMENT_STATE_PROCESSING, STATE_EVENT_COMPUTE_DONE, MEASUREMENT_STATE_RESULT_READY },
     { MEASUREMENT_STATE_SENSOR_ERROR, STATE_EVENT_BUTTON_SHORT, MEASUREMENT_STATE_M_IDLE },
-    { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_REJECTED, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_RESULT_READY, STATE_EVENT_RESULT_TO_STORE, MEASUREMENT_STATE_STORE_LOCAL },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_STORE_DONE, MEASUREMENT_STATE_M_IDLE },
     { MEASUREMENT_STATE_STORE_LOCAL, STATE_EVENT_WRITE_ERROR, MEASUREMENT_STATE_STORAGE_ERROR },
@@ -41,6 +40,8 @@ static measurement_state_e measurement_state;
 
 /**
  * @brief Stores the result as an unsent packet. The BLE region sends it later.
+ *
+ * A rejected result is stored too. Its packet holds the reject reason.
  *
  * @return 0 on success, or the error from record_put().
  */
@@ -55,6 +56,7 @@ static int store_result(void)
     pkt.temp_centi_c = r->temp_centi_c;
     pkt.a_rms_mm_s2 = r->a_rms_mm_s2;
     pkt.battery_mv = r->battery_mv;
+    pkt.reject = (uint8_t)r->reject;
     const size_t len = packet_serialize(&pkt, buf);
 
     return record_put(buf, len, false, NULL);
@@ -69,9 +71,11 @@ static int store_result(void)
  *   RESULT_DISPLAY_MS ends.
  * - MEASURING: Clears the result request. Magenta SLOW. The function calls pipeline_measure().
  * - PROCESSING: Magenta FAST. The function calls pipeline_process().
- * - SENSOR_ERROR: Red SLOW. The transition table handles the acknowledgement.
- * - RESULT_READY: The function posts RESULT_REJECTED when the pipeline result has a reject
- *   reason. Otherwise it shows green STEADY for RESULT_DISPLAY_MS and posts RESULT_TO_STORE.
+ * - SENSOR_ERROR: Red SLOW. The function stores the device-fault reject and posts TX_KICK. If
+ *   the write fails, the function logs an error and the record is lost. The transition table
+ *   handles the acknowledgement.
+ * - RESULT_READY: The function posts RESULT_TO_STORE for every result, also for a reject. It shows
+ *   no result color, because this build has no FTI category (detailed_design.md 4.5.3).
  * - STORE_LOCAL: The LED does not change. The function stores the result as unsent and posts
  *   TX_KICK, so the BLE region sends it when a phone is connected. A failed write posts
  *   WRITE_ERROR.
@@ -111,7 +115,8 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             if (IS_ENABLED(CONFIG_FSM_MEASURE_MODE_MANUAL)) {
                 uint32_t guard_ms = SLEEP_GUARD_MS;
 
-                // After a stored measurement, add time so that the result LED stays visible.
+                // After a stored measurement, count from the end of the result display time
+                // (detailed_design.md 4.5.1).
                 if (from == MEASUREMENT_STATE_STORE_LOCAL) {
                     guard_ms += RESULT_DISPLAY_MS;
                 }
@@ -148,23 +153,21 @@ static void measurement_enter(measurement_state_e from, measurement_state_e to)
             led_clear(LED_PRIO_MEASURE);
             led_request(LED_PRIO_FAULT, LED_RED, LED_PAT_SLOW, 0, 0);
 
+            if (store_result() != 0) {
+                LOG_ERR("Device-fault reject not stored");
+                break;
+            }
+            fsm_post(STATE_EVENT_TX_KICK);
+
             break;
 
-        case MEASUREMENT_STATE_RESULT_READY: {
+        case MEASUREMENT_STATE_RESULT_READY:
             __ASSERT(from == MEASUREMENT_STATE_PROCESSING, "RESULT_READY entered from %d", from);
 
             led_clear(LED_PRIO_MEASURE);
-
-            if (pipeline_result()->reject != REJECT_NONE) {
-                fsm_post(STATE_EVENT_RESULT_REJECTED);
-                break;
-            }
-
-            led_request(LED_PRIO_RESULT, LED_GREEN, LED_PAT_STEADY, 0, RESULT_DISPLAY_MS);
             fsm_post(STATE_EVENT_RESULT_TO_STORE);
 
             break;
-        }
 
         case MEASUREMENT_STATE_STORE_LOCAL:
             __ASSERT(from == MEASUREMENT_STATE_RESULT_READY, "STORE_LOCAL entered from %d", from);

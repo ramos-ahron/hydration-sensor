@@ -53,7 +53,9 @@ static bool failed(int err, const char *name)
 static void measure_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
-    result = (struct result){ .reject = REJECT_NONE };
+    // A reject is stored too. INT16_MIN marks each value that the step did not read.
+    result = (struct result){ .temp_centi_c = INT16_MIN, .a_rms_mm_s2 = INT16_MIN,
+                              .battery_mv = INT16_MIN };
 
     if (safety_check() != 0) {
         result.reject = REJECT_CHARGING;

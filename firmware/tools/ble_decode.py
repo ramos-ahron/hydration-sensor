@@ -1,10 +1,10 @@
-"""Connect to the hydration sensor over BLE and decode its records (packet v2).
+"""Connect to the hydration sensor over BLE and decode its records (packet v3).
 
 Usage:
 
     python ble_decode.py              # print records until Ctrl-C
     python ble_decode.py --count 20   # stop and disconnect after 20 records
-    python ble_decode.py --hex <hex>  # decode one 17-byte record from the device shell, no radio
+    python ble_decode.py --hex <hex>  # decode one 18-byte record from the device shell, no radio
     python ble_decode.py --selftest   # check parser, decoder and reassembly, no radio
 
 Live mode needs bleak. pyproject.toml declares it. Run `uv run ble_decode.py` from this folder.
@@ -27,7 +27,7 @@ One fragment = one BLE notification (little-endian):
 
     The receiver joins the fragments with the same (session_id, sequence) in index order.
 
-One record, packet v2, 17 bytes (little-endian):
+One record, packet v3, 18 bytes (little-endian):
 
     byte   0      1      2      3      4      5      6      7      8
          +------+------+------+------+------+------+------+------+------+
@@ -35,11 +35,11 @@ One record, packet v2, 17 bytes (little-endian):
          +------+------+------+------+------+------+------+------+------+
           u8     u16           u32                         u16
 
-    byte   9      10     11     12     13     14     15     16
-         +------+------+------+------+------+------+------+------+
-         | temp_centi_c| a_rms_mm_s2 | battery_mv  | record_crc16|
-         +------+------+------+------+------+------+------+------+
-          i16           i16           i16           u16
+    byte   9      10     11     12     13     14     15     16     17
+         +------+------+------+------+------+------+------+------+------+
+         | temp_centi_c| a_rms_mm_s2 | battery_mv  |reject| record_crc16|
+         +------+------+------+------+------+------+------+------+------+
+          i16           i16           i16           u8     u16
 
     record_crc16 is CRC-16/CCITT-FALSE (seed 0xFFFF) over every byte before it.
 """
@@ -461,10 +461,10 @@ async def run(name, count):
     if count and received < count:
         sys.exit(1)
 
-# Bytes 0-14 are copied from test_golden_offsets in firmware/tests/packet/src/main.c. The CRC
-# (bytes 15-16, 0xd39c LSB first) is CRC-16/CCITT-FALSE of those bytes, computed once by a separate
+# Bytes 0-15 are copied from test_golden_offsets in firmware/tests/packet/src/main.c. The CRC
+# (bytes 16-17, 0xadec LSB first) is CRC-16/CCITT-FALSE of those bytes, computed once by a separate
 # bitwise implementation, not by this script.
-GOLDEN = "0208070c0b0a090e0d1211141316159cd3"
+GOLDEN = "0308070c0b0a090e0d12111413161517ecad"
 
 
 def raises_value_error(fn, *args):
@@ -522,24 +522,24 @@ def sample_value(index, field):
 
 
 def test_table_shape(table):
-    """Check that the header gives packet v2.
+    """Check that the header gives packet v3.
 
-    Packet v2 has 8 fields in a known order, 17 bytes, only known wire types and the CRC seed
+    Packet v3 has 9 fields in a known order, 18 bytes, only known wire types and the CRC seed
     0xFFFF.
 
     Args:
         table (Table): Layout from load_table().
 
     Raises:
-        AssertionError: The header does not match packet v2.
+        AssertionError: The header does not match packet v3.
     """
     fields = table.fields
     size = struct.calcsize(record_format(fields))
     names = [field.name for field in fields]
-    assert table.version == 2 and len(fields) == 8 and size == 17, (table.version, len(fields),
+    assert table.version == 3 and len(fields) == 9 and size == 18, (table.version, len(fields),
                                                                     size)
     assert names == ["version", "session_id", "timestamp_s", "sequence", "temp_centi_c",
-                     "a_rms_mm_s2", "battery_mv", "record_crc16"], names
+                     "a_rms_mm_s2", "battery_mv", "reject", "record_crc16"], names
     assert all(field.wire_type in WIRE_FORMAT for field in fields)
     assert table.crc_seed == 0xFFFF, hex(table.crc_seed)
 
@@ -585,13 +585,14 @@ def test_golden(table):
         AssertionError: A value or the printed line is wrong.
     """
     raw = decode(table, bytes.fromhex(GOLDEN))
-    want = dict(version=2, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
-                temp_centi_c=0x1112, a_rms_mm_s2=0x1314, battery_mv=0x1516, record_crc16=0xD39C)
+    want = dict(version=3, session_id=0x0708, timestamp_s=0x090A0B0C, sequence=0x0D0E,
+                temp_centi_c=0x1112, a_rms_mm_s2=0x1314, battery_mv=0x1516, reject=0x17,
+                record_crc16=0xADEC)
     assert raw == want, raw
     line = format_record(table.fields, raw)
-    assert line == ("version=2  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
+    assert line == ("version=3  session_id=1800  timestamp_s=151653132 s  sequence=3342  "
                     "temp_centi_c=43.7 C  a_rms_mm_s2=4.884 m/s^2  battery_mv=5398 mV  "
-                    "record_crc16=54172"), line
+                    "reject=23  record_crc16=44524"), line
 
 
 def test_bad_records(table):
@@ -652,7 +653,7 @@ def test_reassembly():
     """Check that Reassembler joins fragments and rejects bad ones.
 
     The test covers these cases:
-        - 2 fragments of 20 and 9 bytes at the default 23-byte MTU
+        - 2 fragments of 20 and 10 bytes at the default 23-byte MTU
         - 3 fragments in order, out of order, and with a repeated fragment
         - a newer record that abandons an incomplete record
         - a fragment that is too short, an index past count, and count 0
@@ -661,14 +662,14 @@ def test_reassembly():
         AssertionError: A record was joined incorrectly, or a bad fragment was accepted.
     """
     golden = bytes.fromhex(GOLDEN)
-    # Default 23-byte MTU (20-byte notifications): 2 fragments carrying 14 and 3 record bytes.
+    # Default 23-byte MTU (20-byte notifications): 2 fragments carrying 14 and 4 record bytes.
     assert len(fragment(0x0708, 0x0D0E, 0, 2, golden[:14])) == 20
-    assert len(fragment(0x0708, 0x0D0E, 1, 2, golden[14:])) == 9
-    # 12-byte notifications: 3 fragments carrying 6, 6 and 5 record bytes.
+    assert len(fragment(0x0708, 0x0D0E, 1, 2, golden[14:])) == 10
+    # 12-byte notifications: 3 fragments carrying 6 record bytes each.
     frags = []
     for index in range(3):
         frags.append(fragment(0x0708, 0x0D0E, index, 3, golden[index * 6:(index + 1) * 6]))
-    assert [len(f) for f in frags] == [12, 12, 11]
+    assert [len(f) for f in frags] == [12, 12, 12]
     for order in ((0, 1, 2), (2, 0, 1), (1, 2, 1, 0)):  # the last order repeats fragment 1
         reassembler, record = Reassembler(), None
         for index in order:
