@@ -183,3 +183,19 @@ ZTEST(record, test_missing_slot)
     zassert_ok(record_store_peek(1, out, &len, NULL, NULL));
     zassert_equal(len, 3);
 }
+
+ZTEST(record, test_short_slot)
+{
+    // The header says 17 record bytes, but the value holds only the 2-byte header.
+    const uint8_t hdr[2] = { 0, 17 };
+    uint8_t out[RECORD_MAX_LEN];
+    char key[16];
+    size_t len;
+    uint16_t id;
+
+    id = put_n(1, false);
+    snprintf(key, sizeof(key), "hs/r/%u", id % SLOTS);
+    zassert_ok(settings_save_one(key, hdr, sizeof(hdr)));
+    zassert_equal(record_store_peek(0, out, &len, NULL, NULL), -EIO);
+    zassert_equal(record_mark_sent(id), -EIO);
+}

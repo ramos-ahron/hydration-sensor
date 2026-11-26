@@ -120,17 +120,26 @@ static void slot_key(char key[SLOT_KEY_LEN], uint16_t id)
  * rd_slot() gives this function to Zephyr. Zephyr calls it for the slot key.
  *
  * @param[in]  key      Key name. This function does not use it.
- * @param[in]  len      Size of the saved value in bytes. This function does not use it.
+ * @param[in]  len      Size of the saved value in bytes.
  * @param[in]  read_cb  Function that copies bytes of the saved value into a buffer.
  * @param[in]  arg      Value to give to @p read_cb. Do not change it.
  * @param[out] param    Buffer that receives the value. Must hold SLOT_BUF_LEN bytes.
  *
- * @retval 1     The value is copied. The load stops.
- * @retval -EIO  The read failed.
+ * @retval 1     The value is copied, and its size is HDR plus its length byte. The load stops.
+ * @retval -EIO  The read failed, or the size does not agree with the length byte. The length
+ *               byte in @p param is then 0.
  */
 static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *arg, void *param)
 {
-    return read_cb(arg, param, SLOT_BUF_LEN) < 0 ? -EIO : 1;
+    uint8_t *buf = param;
+    const ssize_t n = read_cb(arg, buf, SLOT_BUF_LEN);
+
+    // settings_load_subtree_direct() ignores this return value. Length 0 makes rd_slot() fail.
+    if (n < HDR || (size_t)n != len || len != HDR + (size_t)buf[1]) {
+        buf[1] = 0;
+        return -EIO;
+    }
+    return 1;
 }
 
 /**
@@ -142,7 +151,8 @@ static int rd_cb(const char *key, size_t len, settings_read_cb read_cb, void *ar
  * @param[out] buf  Receives the slot value. Must hold SLOT_BUF_LEN bytes.
  *
  * @retval 0     The slot value is in @p buf. Its length byte is 1 to RECORD_MAX_LEN.
- * @retval -EIO  The load failed, the key is not in flash, or the length byte is out of range.
+ * @retval -EIO  The key is not in flash, the read failed or was short, or the length byte is
+ *               out of range.
  */
 static int rd_slot(uint16_t id, uint8_t *buf)
 {
