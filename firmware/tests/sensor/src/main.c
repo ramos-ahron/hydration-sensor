@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include <zephyr/ztest.h>
+ZTEST_SUITE(a_rms, NULL, NULL, NULL, NULL, NULL);
 
 /**
  * @brief Removes the sensor override before each test.
@@ -16,7 +17,6 @@ static void before(void *f)
     ARG_UNUSED(f);
     set_override(NULL);
 }
-ZTEST_SUITE(a_rms, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(sensor_io, NULL, NULL, before, NULL, NULL);
 
 ZTEST(a_rms, test_constant_is_zero)

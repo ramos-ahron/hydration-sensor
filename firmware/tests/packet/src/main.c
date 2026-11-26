@@ -24,6 +24,38 @@ static void mk_pkt(struct packet *pkt)
     pkt->battery_mv = 3000;
 }
 
+/**
+ * @brief Builds every fragment, checks each header, and joins the payloads.
+ *
+ * @param[in]  pkt  Serialized packet.
+ * @param[in]  len  Size of @p pkt in bytes.
+ * @param[in]  att  ATT payload size for each fragment, in bytes.
+ * @param[out] out  Receives the joined payloads. Must hold @p len bytes.
+ *
+ * @return Number of payload bytes in @p out.
+ */
+static size_t reassemble(const uint8_t *pkt, size_t len, size_t att, uint8_t *out)
+{
+    uint8_t f[244];
+    size_t n = packet_frag_count(len, att), total = 0;
+
+    for (size_t i = 0; i < n; i++) {
+        size_t w = packet_frag_build(pkt, len, 0xBEEF, 0x1234, i, att, f);
+
+        zassert_equal(sys_get_le16(&f[0]), 0xBEEF);
+        zassert_equal(sys_get_le16(&f[2]), 0x1234);
+        zassert_equal(f[4], i);
+        zassert_equal(f[5], n);
+        zassert_true(w <= att);
+        if (i + 1 < n) {
+            zassert_equal(w, att);
+        }
+        memcpy(&out[total], &f[PACKET_FRAG_HDR_LEN], w - PACKET_FRAG_HDR_LEN);
+        total += w - PACKET_FRAG_HDR_LEN;
+    }
+    return total;
+}
+
 ZTEST(packet, test_size_and_crc_algo)
 {
     zassert_equal(PACKET_SIZE, 18);
@@ -96,38 +128,6 @@ ZTEST(packet, test_parse_rejects)
     buf[4] ^= 0x04;
     zassert_equal(packet_parse(buf, PACKET_SIZE, &b), -EBADMSG);
     zassert_equal(b.version, 0xA5, "pkt changed on a failed parse");
-}
-
-/**
- * @brief Builds every fragment, checks each header, and joins the payloads.
- *
- * @param[in]  pkt  Serialized packet.
- * @param[in]  len  Size of @p pkt in bytes.
- * @param[in]  att  ATT payload size for each fragment, in bytes.
- * @param[out] out  Receives the joined payloads. Must hold @p len bytes.
- *
- * @return Number of payload bytes in @p out.
- */
-static size_t reassemble(const uint8_t *pkt, size_t len, size_t att, uint8_t *out)
-{
-    uint8_t f[244];
-    size_t n = packet_frag_count(len, att), total = 0;
-
-    for (size_t i = 0; i < n; i++) {
-        size_t w = packet_frag_build(pkt, len, 0xBEEF, 0x1234, i, att, f);
-
-        zassert_equal(sys_get_le16(&f[0]), 0xBEEF);
-        zassert_equal(sys_get_le16(&f[2]), 0x1234);
-        zassert_equal(f[4], i);
-        zassert_equal(f[5], n);
-        zassert_true(w <= att);
-        if (i + 1 < n) {
-            zassert_equal(w, att);
-        }
-        memcpy(&out[total], &f[PACKET_FRAG_HDR_LEN], w - PACKET_FRAG_HDR_LEN);
-        total += w - PACKET_FRAG_HDR_LEN;
-    }
-    return total;
 }
 
 ZTEST(packet, test_fragments)

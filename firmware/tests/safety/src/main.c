@@ -6,22 +6,10 @@
 
 #include <zephyr/ztest.h>
 
-extern void safety_set_batt_override(int mv);
-extern void safety_set_vbus_override(int v);
-
 static int batt_events;
 
-/**
- * @brief Stand-in for the state machine. It counts battery events only.
- *
- * @param[in] event  Event that the safety module posts.
- */
-void fsm_post(state_event_e event)
-{
-    if (event == STATE_EVENT_BATTERY_CHANGED) {
-        batt_events++;
-    }
-}
+extern void safety_set_batt_override(int mv);
+extern void safety_set_vbus_override(int v);
 
 /**
  * @brief Sets the battery override and checks the level and the number of events it posted.
@@ -62,6 +50,20 @@ static void before(void *f)
     /* Go back to OK from any level. Set VBUS to absent, because the bench has no hardware VBUS. */
     safety_set_batt_override(BATT_LOW_MV + BATT_MARGIN_MV);
     safety_set_vbus_override(0);
+}
+
+ZTEST_SUITE(safety, NULL, setup, before, NULL, NULL);
+
+/**
+ * @brief Stand-in for the state machine. It counts battery events only.
+ *
+ * @param[in] event  Event that the safety module posts.
+ */
+void fsm_post(state_event_e event)
+{
+    if (event == STATE_EVENT_BATTERY_CHANGED) {
+        batt_events++;
+    }
 }
 
 ZTEST(safety, test_init_idempotent)
@@ -134,5 +136,3 @@ ZTEST(safety, test_drive_watchdog_smoke)
     }
     (void)safety_reset_was_watchdog();
 }
-
-ZTEST_SUITE(safety, NULL, setup, before, NULL, NULL);
