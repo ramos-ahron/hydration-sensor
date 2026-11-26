@@ -18,6 +18,8 @@ static const struct device *const temp_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(temp
 
 static struct override ovr;
 static float window[ACCEL_WINDOW_SAMPLES][3];
+// The shell ("hs ctx") and the pipeline thread both call get_motion().
+static K_MUTEX_DEFINE(window_lock);
 
 float a_rms(const float (*a)[3], size_t n)
 {
@@ -74,6 +76,7 @@ int get_motion(float *rms)
     if (!dev_usable(accel_dev)) {
         return -ENODEV;
     }
+    k_mutex_lock(&window_lock, K_FOREVER);
     for (size_t i = 0; i < ACCEL_WINDOW_SAMPLES; i++) {
         struct sensor_value v[3];
         if (i > 0) {
@@ -81,6 +84,7 @@ int get_motion(float *rms)
         }
         if (sensor_sample_fetch(accel_dev) != 0
             || sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_XYZ, v) != 0) {
+            k_mutex_unlock(&window_lock);
             return -EIO;
         }
         for (int k = 0; k < 3; k++) {
@@ -93,11 +97,11 @@ int get_motion(float *rms)
     for (size_t i = 1; i < ACCEL_WINDOW_SAMPLES && stuck; i++) {
         stuck = memcmp(window[i], window[0], sizeof(window[0])) == 0;
     }
-    if (stuck) {
-        return -EIO;
+    if (!stuck) {
+        *rms = a_rms(window, ACCEL_WINDOW_SAMPLES);
     }
-    *rms = a_rms(window, ACCEL_WINDOW_SAMPLES);
-    return 0;
+    k_mutex_unlock(&window_lock);
+    return stuck ? -EIO : 0;
 }
 
 int get_temp(int16_t *centi_c)
