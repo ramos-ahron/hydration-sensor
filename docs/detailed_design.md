@@ -1152,6 +1152,8 @@ $$
 BFD_z=sign(RFDS)\cdot D_M
 $$
 
+When $RFDS=0$, $sign(RFDS)=0$, so the formula gives $BFD_z=0$ for any $D_M$. In that case keep $D_M$ and mark the direction as undetermined. If $D_M\ge1$, the reading shows the $Q<40$ display (§4.3.12). <!-- REVIEW 2026-11-25: Closed the RFDS = 0 gap, which hid a large D_M as "Baseline". Fail-closed choice; the team must confirm it. -->
+
 Interpretation:
 
 - $BFD_z \approx 0$: normal baseline variation,
@@ -1194,7 +1196,7 @@ The user-facing output shall be categorical, not falsely precise. Evaluate hard 
 | Condition | Display |
 | --------- | ------- |
 | Quality failed | “Reading skipped — adjust sensor / stay still.” |
-| $Q<40$ | “Fluid trend uncertain — recheck seated.” |
+| $Q<40$, or undetermined direction with $D_M\ge1$ (§4.3.10) | “Fluid trend uncertain — recheck seated.” |
 | $BFD_z\ge3$ or $RFDS>8\%$ | “BioZ Fluid Trend: Very low vs baseline — recheck.” |
 | $BFD_z\ge2$ or $4\%\le RFDS\le8\%$ | “BioZ Fluid Trend: Low vs baseline.” |
 | $BFD_z\ge1$ or $2\%\le RFDS<4\%$ | “BioZ Fluid Trend: Slightly low vs baseline.” |
@@ -1239,23 +1241,23 @@ The ENOB case models idealized quantization noise only; it omits AFE noise, curr
 | S2 | S1 with ENOB = 16.3 quantization | Accepted; errors within the quantization tolerance |
 | S3 | S1 with a fixed 2 ns delay | Accepted; $R_\infty$ bias has the sign and approximate size of the §4.3.13 sensitivity result |
 | S4 | S1 parameters on the 9-point MVP sweep | Accepted; recovery error reported against S1 (§4.3.1 identifiability) |
-| S5 | S1 as baseline, current $R_0$ +4% | RFDS = +4.00% within tolerance; FTI = Low in FTI-enabled builds |
+| S5 | The §4.3.13 synthetic 10-session baseline, current $R_0$ +4% | RFDS = +4.00% within tolerance; $BFD_z<3$ (the §4.3.13 run gave +1.828); FTI = Low in FTI-enabled builds |
 | S6 | Lead-off status | Contact reject; record stored; no FTI category |
 | S7 | Saturation status | Saturation reject |
 | S8 | FIFO overflow, unknown tag, or incomplete word | FIFO reject |
 | S9 | Motion override with $a_{rms}$ above threshold | Motion reject |
-| S10 | ADXL362 stale or faulted | Sensor-fault flag; motion not named as the cause |
+| S10 | ADXL362 stale or faulted | Sensor-fault reject; record stored; motion not named as the cause |
 | S11 | Fixture temperature change above 4 °C | Reject or low confidence (§4.4.4) |
-| S12 | MCP9808 stale | Temperature-fault flag; no die-temperature substitution |
+| S12 | MCP9808 stale | Temperature-fault reject; record stored; no die-temperature substitution |
 | S13 | Repeated-sweep $CV_{R0}$ of 3–5%, then ≥5% | Confidence penalty, then reject (§4.4.3) |
 | S14 | Disproportionate low-frequency collapse (sweat-like shape) | Spectral-gate reject or sweat flag |
 | S15 | AFE step timeout | Drive stopped; device-fault reject; `SENSOR_ERROR` |
 
-Noise comes from a seeded deterministic generator, so a given build and seed reproduce every run exactly.
+Noise comes from a seeded deterministic generator, so a given build and seed reproduce every run exactly. <!-- REVIEW 2026-11-25: S5 now names its baseline, because one noiseless session leaves BFD-z set only by the feature floors. A separate "Very low" scenario is not added: the §4.3.12 cascade is a fixed table, and S5 checks one row of it. S10 and S12 follow the fail-closed rule in §4.4.5. -->
 
 **Reported per run:** scenario ID, seed, truth and computed $R_0$, $R_\infty$, $\tau$, $\alpha$, $E_{fit}$, RFDS, BFD-z, Q, reject reason, and FTI; absolute and relative error; pass/fail against tolerance; execution time of each pipeline step from the CPU cycle counter; and peak stack use. Accuracy runs also execute on the host simulator in CI. Timing and stack results are valid only on the nRF52840.
 
-**Tolerance rule:** the §4.3.13 numbers come from a double-precision Python run. The nRF52840 FPU is single precision, so firmware tolerances depend on the numeric type chosen for the Cole fit. Set the tolerances from the first on-target run, record the numeric type, and freeze both with the threshold file. Do not copy the Python tolerances unchanged.
+**Tolerance rule:** the §4.3.13 numbers come from a double-precision Python run. The nRF52840 FPU is single precision, so firmware tolerances depend on the numeric type chosen for the Cole fit. Before the first on-target run, set each tolerance from the precision of that numeric type and the expected error in §4.3.13. Record the numeric type, and freeze both with the threshold file. The first on-target run is a check against the frozen tolerances, not their source. Change a tolerance only under a dated amendment that states the cause. Do not copy the Python tolerances unchanged. <!-- REVIEW 2026-11-25: A tolerance set from the first run cannot fail on that run. The team must confirm the error budget method. -->
 
 **Oracle mode:** until calibration and scoring are implemented, a build may substitute scenario truth for the scoring outputs to exercise downstream code. Oracle builds set a flag in every record, and the harness reports them as ORACLE, never PASS. No accuracy claim may come from an oracle build.
 
@@ -1355,7 +1357,7 @@ $$
 a_{rms}=\sqrt{\frac{1}{N}\sum_{n=1}^{N}\left\lVert\mathbf{a}_n-\bar{\mathbf{a}}\right\rVert_2^2}
 $$
 
-where $\mathbf{a}_n=[a_{x,n},a_{y,n},a_{z,n}]^T$ after the frozen calibration/filter, and $\bar{\mathbf{a}}$ is the vector mean over the same window. Use one documented acceleration unit throughout. Because the ADXL362 has no gyroscope, this metric can miss slow orientation changes, static muscle contraction, and constant-velocity movement. The threshold and sampling profile are `[UNVERIFIED — pending bench motion trials and Stage 2 challenge data]`. If the accelerometer is missing, stale, or faulted, preserve a sensor-fault flag; BioZ instability may still reject the reading, but firmware shall not label motion as the cause. <!-- REVIEW 2026-08-26: Replaced the optional/underspecified IMU path with the selected three-axis accelerometer and an executable vector metric. -->
+where $\mathbf{a}_n=[a_{x,n},a_{y,n},a_{z,n}]^T$ after the frozen calibration/filter, and $\bar{\mathbf{a}}$ is the vector mean over the same window. Use one documented acceleration unit throughout. Because the ADXL362 has no gyroscope, this metric can miss slow orientation changes, static muscle contraction, and constant-velocity movement. The threshold and sampling profile are `[UNVERIFIED — pending bench motion trials and Stage 2 challenge data]`. If the accelerometer is missing, stale, or faulted, preserve a sensor-fault flag and reject the reading as a sensor fault (§4.4.5). Firmware shall not label motion as the cause. <!-- REVIEW 2026-08-26: Replaced the optional/underspecified IMU path with the selected three-axis accelerometer and an executable vector metric. -->
 
 Because $a_{rms}$ differences samples against their own window mean, a fixed 0 g offset cancels, but the ADXL362's guaranteed ±10% sensitivity calibration error (§4.1.6) does not; if per-part calibration is not performed, $a_{threshold}$ shall carry at least a 10% margin above the intended detection floor. The sensor's own noise density (550 µg/√Hz on X/Y, 920 µg/√Hz on Z in normal operating mode, §4.1.6) also contributes to $a_{rms}$ at rest and shall be characterized on stationary bench data before the threshold is frozen, so that sensor self-noise is not mistaken for a motion margin. <!-- REVIEW 2026-08-30: Added the datasheet-sourced calibration-error and noise-floor discussion the a_rms threshold derivation did not previously account for. -->
 
@@ -1441,6 +1443,10 @@ The additive form assumes penalties can be combined linearly even though artifac
 | Cole fit residual >5%     |      30 |
 | Saturation/clipping       |  Reject |
 | Lead-off                  |  Reject |
+| ADXL362 missing, stale, or faulted | Reject |
+| MCP9808 missing, stale, or faulted | Reject |
+
+A gate that has no valid input cannot pass. Thus a missing, stale, or faulted context sensor is a hard failure with a sensor-fault reason, not a penalty. <!-- REVIEW 2026-11-25: Q had no rule for an unavailable motion or temperature gate, so such a reading could score High. Fail-closed choice; the team must confirm it or replace it with a penalty. -->
 
 Confidence bands:
 
