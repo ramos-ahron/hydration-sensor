@@ -54,7 +54,8 @@ static void measure_handler(struct k_work *work)
 {
     ARG_UNUSED(work);
     // A reject is stored too. INT16_MIN marks each value that the step did not read.
-    result = (struct result){ .temp_centi_c = INT16_MIN, .a_rms_mm_s2 = INT16_MIN,
+    result = (struct result){ .temp_centi_c = INT16_MIN,
+                              .a_rms_mm_s2 = INT16_MIN,
                               .battery_mv = INT16_MIN };
 
     if (safety_check() != 0) {
